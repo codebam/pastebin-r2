@@ -12,7 +12,7 @@ app.post('/upload', async (c) => {
 app.get('/:filename', async (c) => {
 	// @ts-ignore
 	const file = await c.env.R2.get(c.req.param('filename'));
-	return new Response(file.body);
+	return new Response(await file.blob());
 });
 
 app.get('/text/:filename', async (c) => {
