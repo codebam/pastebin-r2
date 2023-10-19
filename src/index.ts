@@ -51,9 +51,13 @@ const index_page = `
     <meta name="viewport" content="width=device-width">
 	</head>
 <style>
+	@media (prefers-color-scheme: dark) {
+		body {
+			background-color: black;
+			color: white;
+		}
+	}
 	body {
-		background-color: black;
-		color: white;
 		font-family: sans-serif;
 	}
 	textarea {
