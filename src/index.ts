@@ -30,14 +30,14 @@ app.get('/text/:filename', async (c) => {
 
 const index_page = `=== Sean's Pastebin ===
 
-to paste:
+paste:
 curl --data-binary @- https://p.seanbehan.ca < file.txt
 
-to access files:
+access files:
 https://r2.seanbehan.ca/34646744-9362-4c9c-9e39-969c2c14461f
 https://p.seanbehan.ca/text/34646744-9362-4c9c-9e39-969c2c14461f
 
-to list files:
+list files:
 https://p.seanbehan.ca/list
 `;
 
