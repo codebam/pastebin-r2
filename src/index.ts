@@ -12,7 +12,7 @@ app.post('/', async (c) => {
 app.get('/list', async (c) => {
 	// @ts-ignore
 	const list = await c.env.R2.list();
-	const files = list.objects.map((obj) => obj.key).join('\n');
+	const files = list.objects.map((obj: { key: string }) => obj.key).join('\n');
 	return new Response(files);
 });
 
@@ -24,7 +24,7 @@ app.get('/:filename', async (c) => {
 
 app.delete('/:filename', async (c) => {
 	// @ts-ignore
-	const file = await c.env.R2.delete(c.req.param('filename'));
+	await c.env.R2.delete(c.req.param('filename'));
 	return new Response('deleted\n');
 });
 
@@ -50,6 +50,6 @@ delete files:
 curl -X DELETE https://p.seanbehan.ca/34646744-9362-4c9c-9e39-969c2c14461f
 `;
 
-app.get('/', (c) => new Response(index_page));
+app.get('/', () => new Response(index_page));
 
 export default app;
