@@ -9,6 +9,12 @@ app.post('/', async (c) => {
 	return new Response('https://r2.seanbehan.ca/' + id + '\n');
 });
 
+app.post('/:id', async (c) => {
+	// @ts-ignore
+	await c.env.R2.put(c.req.param('id'), await c.req.blob());
+	return new Response('https://r2.seanbehan.ca/' + c.req.param('id') + '\n');
+});
+
 app.get('/list', async (c) => {
 	// @ts-ignore
 	const list = await c.env.R2.list();
@@ -38,6 +44,7 @@ const index_page = `=== Sean's Pastebin ===
 
 upload files:
 curl --data-binary @- https://p.seanbehan.ca < file.txt
+curl --data-binary @- https://p.seanbehan.ca/vanity < file.txt
 
 access files:
 https://r2.seanbehan.ca/34646744-9362-4c9c-9e39-969c2c14461f
