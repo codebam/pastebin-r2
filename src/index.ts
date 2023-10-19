@@ -27,7 +27,7 @@ app.get('/list', async (c) => {
 });
 
 app.get('/:filename', async (c) => {
-	const file = (await c.env.R2.get(c.req.param('filename'))) ?? new Response(new File(['file not found'], ''));
+	const file = (await c.env.R2.get(c.req.param('filename'))) ?? new Response('file not found');
 	return new Response(await file.blob());
 });
 
@@ -37,7 +37,7 @@ app.delete('/:filename', async (c: any) => {
 });
 
 app.get('/text/:filename', async (c) => {
-	const file = (await c.env.R2.get(c.req.param('filename'))) ?? new Response(new File(['file not found'], ''));
+	const file = (await c.env.R2.get(c.req.param('filename'))) ?? new Response('file not found');
 	return new Response(await file.text());
 });
 
