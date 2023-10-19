@@ -27,8 +27,11 @@ app.get('/list', async (c) => {
 });
 
 app.get('/:filename', async (c) => {
-	const file = (await c.env.R2.get(c.req.param('filename'))) ?? new Response('file not found');
-	return new Response(await file.blob());
+	const file = await c.env.R2.get(c.req.param('filename'));
+	if (file) {
+		return new Response(await file.blob(), { headers: { etag: file.httpEtag } });
+	}
+	return new Response('file not found');
 });
 
 app.delete('/:filename', async (c: any) => {
@@ -37,8 +40,11 @@ app.delete('/:filename', async (c: any) => {
 });
 
 app.get('/text/:filename', async (c) => {
-	const file = (await c.env.R2.get(c.req.param('filename'))) ?? new Response('file not found');
-	return new Response(await file.text());
+	const file = await c.env.R2.get(c.req.param('filename'));
+	if (file) {
+		return new Response(await file.text(), { headers: { etag: file.httpEtag } });
+	}
+	return new Response('file not found');
 });
 
 const index_page = `
