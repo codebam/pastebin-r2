@@ -27,7 +27,7 @@ app.get('/list', async (c) => {
 });
 
 app.get('/:filename', async (c) => {
-	const file = (await c.env.R2.get(c.req.param('filename'))) ?? new Response(new File([], ''));
+	const file = (await c.env.R2.get(c.req.param('filename'))) ?? new Response(new File(['file not found'], ''));
 	return new Response(await file.blob());
 });
 
@@ -37,7 +37,7 @@ app.delete('/:filename', async (c: any) => {
 });
 
 app.get('/text/:filename', async (c) => {
-	const file = (await c.env.R2.get(c.req.param('filename'))) ?? new Response(new File([], ''));
+	const file = (await c.env.R2.get(c.req.param('filename'))) ?? new Response(new File(['file not found'], ''));
 	return new Response(await file.text());
 });
 
@@ -73,7 +73,6 @@ const index_page = `
 <footer>
 	<a href="https://github.com/codebam/pastebin-r2">source code</a>
 </footer>
-
 <script>
 	const pastebin = async (container, data) => {
 		const response = await fetch('https://p.seanbehan.ca', {method: 'POST', body: data})
