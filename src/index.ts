@@ -43,23 +43,46 @@ app.get('/text/:filename', async (c) => {
 	return new Response(await file.text());
 });
 
-const index_page = `=== Sean's Pastebin ===
-
-upload files:
-curl --data-binary @- https://p.seanbehan.ca < file.txt
-curl --data-binary @- https://p.seanbehan.ca/vanity < file.txt
-
-access files:
-https://r2.seanbehan.ca/34646744-9362-4c9c-9e39-969c2c14461f
-https://p.seanbehan.ca/text/34646744-9362-4c9c-9e39-969c2c14461f
-
-list files:
-https://p.seanbehan.ca/list
-
-delete files:
-curl -X DELETE https://p.seanbehan.ca/34646744-9362-4c9c-9e39-969c2c14461f
+const index_page = `
+<html>
+	<head>
+		<title>Sean's Pastebin</title>
+    <meta name="viewport" content="width=device-width">
+	</head>
+<style>
+	body {
+		background-color: black;
+		color: white;
+		font-family: sans-serif;
+	}
+	textarea {
+		width: 100%;
+	}
+</style>
+<body>
+	<div id="container">
+		<h1>=== Sean's Pastebin ===</h1>
+		<textarea id="paste" rows="20"></textarea>
+		<button id="submit">submit</button>
+	</div>
+</body>
+<script>
+	window.onload = (event) => {
+		container = document.getElementById('container');
+		paste = document.getElementById('paste').value;
+		submit = document.getElementById('submit');
+		submit.addEventListener('click', async (event) => {
+			const response = await fetch('https://p.seanbehan.ca', {method: 'POST', body: paste})
+			const url = await response.text();
+			const url_element = document.createElement('p');
+			url_element.innerHTML = url;
+			container.appendChild(url_element);
+		});
+	};
+</script>
+</html>
 `;
 
-app.get('/', () => new Response(index_page));
+app.get('/', () => new Response(index_page, { headers: { 'Content-Type': 'text/html' } }));
 
 export default app;
