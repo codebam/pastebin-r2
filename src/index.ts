@@ -1,45 +1,43 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 
-const app = new Hono();
+type Bindings = {
+	R2: R2Bucket;
+};
+
+const app = new Hono<{ Bindings: Bindings }>();
 
 app.use('*', cors());
 
 app.post('/', async (c) => {
 	const id = crypto.randomUUID();
-	// @ts-ignore
 	await c.env.R2.put(id, await c.req.blob());
 	return new Response('https://r2.seanbehan.ca/' + id + '\n');
 });
 
 app.post('/:id', async (c) => {
-	// @ts-ignore
 	await c.env.R2.put(c.req.param('id'), await c.req.blob());
 	return new Response('https://r2.seanbehan.ca/' + c.req.param('id') + '\n');
 });
 
 app.get('/list', async (c) => {
-	// @ts-ignore
 	const list = await c.env.R2.list();
 	const files = list.objects.map((obj: { key: string }) => obj.key).join('\n');
 	return new Response(files);
 });
 
 app.get('/:filename', async (c) => {
-	// @ts-ignore
-	const file = await c.env.R2.get(c.req.param('filename'));
+	const file = (await c.env.R2.get(c.req.param('filename'))) ?? new Response(new File([], ''));
 	return new Response(await file.blob());
 });
 
-app.delete('/:filename', async (c) => {
-	// @ts-ignore
+app.delete('/:filename', async (c: any) => {
 	await c.env.R2.delete(c.req.param('filename'));
 	return new Response('deleted\n');
 });
 
 app.get('/text/:filename', async (c) => {
-	// @ts-ignore
-	const file = await c.env.R2.get(c.req.param('filename'));
+	const file = (await c.env.R2.get(c.req.param('filename'))) ?? new Response(new File([], ''));
 	return new Response(await file.text());
 });
 
