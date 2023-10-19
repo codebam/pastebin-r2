@@ -12,7 +12,7 @@ app.post('/', async (c) => {
 app.get('/list', async (c) => {
 	// @ts-ignore
 	const list = await c.env.R2.list();
-	const files = list.objects.map((obj) => obj.key);
+	const files = list.objects.map((obj) => obj.key).join('\n');
 	return new Response(files);
 });
 
