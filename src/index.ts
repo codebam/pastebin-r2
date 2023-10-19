@@ -1,5 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { prettyJSON } from 'hono/pretty-json';
+import { index_page } from './index_page';
 
 type Bindings = {
 	R2: R2Bucket;
@@ -8,6 +10,7 @@ type Bindings = {
 const app = new Hono<{ Bindings: Bindings }>();
 
 app.use('*', cors());
+app.use('/info/*', prettyJSON());
 
 app.post('/', async (c) => {
 	const id = crypto.randomUUID();
@@ -51,63 +54,6 @@ app.get('/text/:id', async (c) => {
 	}
 	return new Response('file not found');
 });
-
-const index_page = `
-<!DOCTYPE html>
-<html lang="en">
-	<head>
-		<title>Sean's Pastebin</title>
-    <meta name="viewport" content="width=device-width">
-	</head>
-<style>
-	@media (prefers-color-scheme: dark) {
-		body {
-			background-color: black;
-			color: white;
-		}
-	}
-	body {
-		font-family: sans-serif;
-	}
-	textarea {
-		width: 100%;
-	}
-</style>
-<body>
-	<div id="container">
-		<h1>=== Sean's Pastebin ===</h1>
-		<textarea id="paste" rows="20"></textarea>
-		<input type="file" name="file" id="file"/>
-		<button id="submit">submit</button>
-	</div>
-</body>
-<footer>
-	<a href="https://github.com/codebam/pastebin-r2">source code</a>
-</footer>
-<script>
-	const pastebin = async (container, data) => {
-		const response = await fetch('https://p.seanbehan.ca', {method: 'POST', body: data})
-		const url = await response.text();
-		const url_element = document.createElement('p');
-		url_element.innerHTML = url;
-		container.appendChild(url_element);
-	}
-	window.onload = async (event) => {
-		container = document.getElementById('container');
-		paste = document.getElementById('paste').value;
-		submit = document.getElementById('submit');
-		file = await new Response(document.getElementById('file').files[0]).blob();
-		submit.addEventListener('click', async (event) => {
-			if (paste !== "") {
-				pastebin(container, paste);
-			} else if (file !== "") {
-				pastebin(container, file);
-			}
-		});
-	};
-</script>
-</html>
-`;
 
 app.get('/', () => new Response(index_page, { headers: { 'Content-Type': 'text/html' } }));
 
