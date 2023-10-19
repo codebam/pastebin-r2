@@ -15,6 +15,11 @@ app.post('/', async (c) => {
 	return new Response('https://r2.seanbehan.ca/' + id + '\n');
 });
 
+app.get('/info/:id', async (c) => {
+	const file = await c.env.R2.get(c.req.param('id'));
+	return c.json(file);
+});
+
 app.post('/:id', async (c) => {
 	await c.env.R2.put(c.req.param('id'), await c.req.blob());
 	return new Response('https://r2.seanbehan.ca/' + c.req.param('id') + '\n');
@@ -26,21 +31,21 @@ app.get('/list', async (c) => {
 	return new Response(files);
 });
 
-app.get('/:filename', async (c) => {
-	const file = await c.env.R2.get(c.req.param('filename'));
+app.get('/:id', async (c) => {
+	const file = await c.env.R2.get(c.req.param('id'));
 	if (file) {
 		return new Response(await file.blob(), { headers: { etag: file.httpEtag } });
 	}
 	return new Response('file not found');
 });
 
-app.delete('/:filename', async (c: any) => {
+app.delete('/:id', async (c: any) => {
 	await c.env.R2.delete(c.req.param('filename'));
 	return new Response('deleted\n');
 });
 
-app.get('/text/:filename', async (c) => {
-	const file = await c.env.R2.get(c.req.param('filename'));
+app.get('/text/:id', async (c) => {
+	const file = await c.env.R2.get(c.req.param('id'));
 	if (file) {
 		return new Response(await file.text(), { headers: { etag: file.httpEtag } });
 	}
