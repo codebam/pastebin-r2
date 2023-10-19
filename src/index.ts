@@ -68,6 +68,10 @@ const index_page = `
 		<button id="submit">submit</button>
 	</div>
 </body>
+<footer>
+	<a href="https://github.com/codebam/pastebin-r2">source code</a>
+</footer>
+
 <script>
 	const pastebin = async (container, data) => {
 		const response = await fetch('https://p.seanbehan.ca', {method: 'POST', body: data})
