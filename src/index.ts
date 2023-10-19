@@ -15,27 +15,6 @@ app.post('/', async (c) => {
 	return new Response('https://r2.seanbehan.ca/' + id + '\n');
 });
 
-app.get('/rev/:id', async (c) => {
-	const _file = await c.env.R2.get(c.req.param('id'));
-	if (_file) {
-		const ab = await _file.arrayBuffer();
-		const view = new Uint8Array(ab);
-		const rev = new Uint8Array([...view].reverse());
-		const _ab = rev.buffer.slice(rev.byteOffset, rev.byteLength + rev.byteOffset);
-		const blob = new Blob([_ab]);
-		return new Response(blob);
-	}
-	return new Response('file not found');
-});
-
-app.get('/size/:id', async (c) => {
-	const file = await c.env.R2.get(c.req.param('id'));
-	if (file) {
-		// @ts-ignore
-		return c.json(file.range?.length);
-	}
-});
-
 app.get('/info/:id', async (c) => {
 	const file = await c.env.R2.get(c.req.param('id'));
 	return c.json(file);
