@@ -18,6 +18,14 @@ app.post('/', async (c) => {
 	return new Response('https://r2.seanbehan.ca/' + id + '\n');
 });
 
+app.get('/size/:id', async (c) => {
+	const file = await c.env.R2.get(c.req.param('id'));
+	if (file) {
+		// @ts-ignore
+		return c.json(file.range?.length);
+	}
+});
+
 app.get('/info/:id', async (c) => {
 	const file = await c.env.R2.get(c.req.param('id'));
 	return c.json(file);
