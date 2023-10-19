@@ -22,6 +22,12 @@ app.get('/:filename', async (c) => {
 	return new Response(await file.blob());
 });
 
+app.delete('/:filename', async (c) => {
+	// @ts-ignore
+	const file = await c.env.R2.delete(c.req.param('filename'));
+	return new Response('deleted\n');
+});
+
 app.get('/text/:filename', async (c) => {
 	// @ts-ignore
 	const file = await c.env.R2.get(c.req.param('filename'));
@@ -39,6 +45,9 @@ https://p.seanbehan.ca/text/34646744-9362-4c9c-9e39-969c2c14461f
 
 list files:
 https://p.seanbehan.ca/list
+
+delete files:
+curl -X DELETE https://p.seanbehan.ca/34646744-9362-4c9c-9e39-969c2c14461f
 `;
 
 app.get('/', (c) => new Response(index_page));
