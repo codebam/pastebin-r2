@@ -5,3 +5,8 @@ compatibility_date = "2023-10-16"
 [[r2_buckets]]
 binding = 'R2'
 bucket_name = 'share'
+
+[[d1_databases]]
+binding = "DB"
+database_name = "pastebin-r2"
+database_id = "9ff09d40-0d94-4608-9d63-5dee2fd620a5"

@@ -14,6 +14,8 @@
     "wrangler": "^3.0.0"
   },
   "dependencies": {
+    "@tsndr/cloudflare-worker-jwt": "^2.2.5",
+    "bcrypt": "^5.1.1",
     "hono": "^3.8.1"
   }
 }
