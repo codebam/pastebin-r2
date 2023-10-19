@@ -3,10 +3,7 @@ import { cors } from 'hono/cors';
 import { prettyJSON } from 'hono/pretty-json';
 import { index_page } from './index_page';
 
-type Bindings = {
-	R2: R2Bucket;
-};
-
+type Bindings = { R2: R2Bucket };
 const app = new Hono<{ Bindings: Bindings }>();
 
 app.use('*', cors());
