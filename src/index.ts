@@ -15,6 +15,19 @@ app.post('/', async (c) => {
 	return new Response('https://r2.seanbehan.ca/' + id + '\n');
 });
 
+app.get('/rev/:id', async (c) => {
+	const _file = await c.env.R2.get(c.req.param('id'));
+	if (_file) {
+		const ab = await _file.arrayBuffer();
+		const view = new Uint8Array(ab);
+		const rev = new Uint8Array([...view].reverse());
+		const _ab = rev.buffer.slice(rev.byteOffset, rev.byteLength + rev.byteOffset);
+		const blob = new Blob([_ab]);
+		return new Response(blob);
+	}
+	return new Response('file not found');
+});
+
 app.get('/size/:id', async (c) => {
 	const file = await c.env.R2.get(c.req.param('id'));
 	if (file) {
@@ -30,13 +43,13 @@ app.get('/info/:id', async (c) => {
 
 app.post('/:id', async (c) => {
 	await c.env.R2.put(c.req.param('id'), await c.req.blob());
-	return new Response('https://r2.seanbehan.ca/' + c.req.param('id') + '\n');
+	return c.text('https://r2.seanbehan.ca/' + c.req.param('id') + '\n');
 });
 
 app.get('/list', async (c) => {
 	const list = await c.env.R2.list();
 	const files = list.objects.map((obj: { key: string }) => obj.key).join('\n');
-	return new Response(files);
+	return c.text(files);
 });
 
 app.get('/:id', async (c) => {
@@ -44,12 +57,12 @@ app.get('/:id', async (c) => {
 	if (file) {
 		return new Response(await file.blob(), { headers: { etag: file.httpEtag } });
 	}
-	return new Response('file not found');
+	return c.text('file not found');
 });
 
 app.delete('/:id', async (c: any) => {
 	await c.env.R2.delete(c.req.param('filename'));
-	return new Response('deleted\n');
+	return c.text('deleted\n');
 });
 
 app.get('/text/:id', async (c) => {
