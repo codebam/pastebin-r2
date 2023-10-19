@@ -21,7 +21,7 @@ app.post('/:id/:new_id', async (c) => {
 app.post('/', async (c) => {
 	const id = crypto.randomUUID();
 	await c.env.R2.put(id, await c.req.blob());
-	return new Response('https://r2.seanbehan.ca/' + id + '\n');
+	return c.text('https://r2.seanbehan.ca/' + id + '\n');
 });
 app.get('/info/:id', async (c) => {
 	const file = await c.env.R2.get(c.req.param('id'));
