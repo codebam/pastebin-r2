@@ -1,6 +1,7 @@
 name = "pastebin-r2"
-main = "src/index.ts"
+main = "dist/index.mjs"
 compatibility_date = "2023-10-16"
+build.command = "npm install && npm run build"
 
 [[r2_buckets]]
 binding = 'R2'
