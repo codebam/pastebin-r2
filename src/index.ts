@@ -45,6 +45,7 @@ app.get('/text/:filename', async (c) => {
 
 const index_page = `
 <!DOCTYPE html>
+<html lang="en">
 	<head>
 		<title>Sean's Pastebin</title>
     <meta name="viewport" content="width=device-width">
