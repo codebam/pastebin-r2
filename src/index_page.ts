@@ -39,14 +39,14 @@ export const index_page = `
 		container.appendChild(url_element);
 	}
 	window.onload = async (event) => {
-		container = document.getElementById('container');
-		paste = document.getElementById('paste').value;
-		submit = document.getElementById('submit');
-		file = await new Response(document.getElementById('file').files[0]).blob();
-		submit.addEventListener('click', async (event) => {
+			submit.addEventListener('click', async (event) => {
+			container = document.getElementById('container');
+			paste = document.getElementById('paste').value;
+			submit = document.getElementById('submit');
+			file = await new Response(document.getElementById('file').files[0]).blob();
 			if (paste !== "") {
 				pastebin(container, paste);
-			} else if (file !== "") {
+			} else if (file !== "" || file.size === 0) {
 				pastebin(container, file);
 			}
 		});
