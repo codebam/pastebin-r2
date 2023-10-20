@@ -39,7 +39,7 @@ export const index_page = `
 		container.appendChild(url_element);
 	}
 	window.onload = async (event) => {
-			submit.addEventListener('click', async (event) => {
+		submit.addEventListener('click', async (event) => {
 			container = document.getElementById('container');
 			paste = document.getElementById('paste').value;
 			submit = document.getElementById('submit');
