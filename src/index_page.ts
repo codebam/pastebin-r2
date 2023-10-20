@@ -46,7 +46,7 @@ export const index_page = `
 			file = await new Response(document.getElementById('file').files[0]).blob();
 			if (paste !== "") {
 				pastebin(container, paste);
-			} else if (file !== "" || file.size === 0) {
+			} else if (file !== "" && file.size !== 0) {
 				pastebin(container, file);
 			}
 		});
