@@ -45,7 +45,9 @@ export const index_page = `
 		const file_selector = document.getElementById('file');
 		paste.addEventListener('paste', async (event) => {
 			const file = await new Response(event.clipboardData.files[0]).blob();
-			pastebin(container, file);
+			if (file.type !== "") {
+				pastebin(container, file);
+			}
 		});
 		submit.addEventListener('click', async (event) => {
 			paste = document.getElementById('paste').value;
