@@ -19,7 +19,7 @@ app.post('/:id/:new_id', async (c) => {
 	return c.text('moved\n');
 });
 app.post('/', async (c) => {
-	const id = crypto.randomUUID();
+	const id = crypto.randomUUID().slice(0,5);
 	await c.env.R2.put(id, await c.req.blob());
 	return c.text('https://r2.seanbehan.ca/' + id + '\n');
 });
