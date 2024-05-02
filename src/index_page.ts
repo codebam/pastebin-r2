@@ -34,16 +34,22 @@ export const index_page = `
 	const pastebin = async (container, data) => {
 		const response = await fetch('https://p.seanbehan.ca', {method: 'POST', body: data})
 		const url = await response.text();
-		const url_element = document.createElement('p');
+		const url_element = document.createElement('a');
 		url_element.innerHTML = url;
+		url_element.href = url;
 		container.appendChild(url_element);
 	}
 	window.onload = async (event) => {
+		container = document.getElementById('container');
+		submit = document.getElementById('submit');
+		const file_selector = document.getElementById('file');
+		paste.addEventListener('paste', async (event) => {
+			const file = await new Response(event.clipboardData.files[0]).blob();
+			pastebin(container, file);
+		});
 		submit.addEventListener('click', async (event) => {
-			container = document.getElementById('container');
 			paste = document.getElementById('paste').value;
-			submit = document.getElementById('submit');
-			file = await new Response(document.getElementById('file').files[0]).blob();
+			file = await new Response(file_selector.files[0]).blob();
 			if (paste !== "") {
 				pastebin(container, paste);
 			} else if (file !== "" && file.size !== 0) {
