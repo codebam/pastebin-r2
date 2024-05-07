@@ -63,7 +63,7 @@ app.get('/text/:id', async (c) => {
 	}
 	return new Response('file not found');
 });
-app.get('/highlight/:id/:lang', async (c) => {
+app.get('/highlight/:id', async (c) => {
 	const file = await c.env.R2.get(c.req.param('id'));
 	if (file) {
 		return new Response(highlight_html, { headers: { 'Content-Type': 'text/html' } });
