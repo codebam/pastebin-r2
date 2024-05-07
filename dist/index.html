@@ -12,18 +12,26 @@
 			}
 		}
 		body {
+			max-width: 60em;
+			margin: auto;
 			font-family: sans-serif;
+			text-align: center;
 		}
 		textarea {
 			width: 100%;
 		}
+		button,
+		input,
+		footer {
+			margin-top: 2em;
+		}
 	</style>
 	<body>
 		<div id="container">
-			<h1>=== Sean's Pastebin ===</h1>
+			<h1>Sean's Pastebin</h1>
 			<textarea id="paste" rows="20"></textarea>
 			<input type="file" name="file" id="file" />
-			<button id="submit">submit</button>
+			<button id="submit">Submit</button>
 		</div>
 	</body>
 	<footer>
