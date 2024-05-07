@@ -65,7 +65,6 @@ app.get('/text/:id', async (c) => {
 });
 app.get('/highlight/:id/:lang', async (c) => {
 	const file = await c.env.R2.get(c.req.param('id'));
-	const lang = c.req.param('lang');
 	if (file) {
 		return new Response(highlight_html, { headers: { 'Content-Type': 'text/html' } });
 	}
