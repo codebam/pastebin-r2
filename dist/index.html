@@ -7,7 +7,7 @@
 	<style>
 		@media (prefers-color-scheme: dark) {
 			body {
-				background-color: black;
+				background-color: rgb(43, 42, 51);
 				color: white;
 			}
 		}
@@ -19,6 +19,11 @@
 		}
 		textarea {
 			width: 100%;
+			background-color: rgba(66, 65, 77, 1);
+			border-radius: 2em;
+			padding 2em;
+			border: none;
+			color: white;
 		}
 		button,
 		input,
@@ -29,7 +34,9 @@
 	<body>
 		<div id="container">
 			<h1>Sean's Pastebin</h1>
-			<textarea id="paste" rows="20"></textarea>
+			<div id="wrapper">
+				<textarea id="paste" rows="20"></textarea>
+			</div>
 			<input type="file" name="file" id="file" />
 			<button id="submit">Submit</button>
 		</div>
