@@ -10,22 +10,11 @@
 				margin: 0;
 				padding: 0;
 			}
-			pre {
-				position: absolute;
-				left: 0;
-				width: 100%;
-				min-height: 100%;
-				top: -10px;
-				border: 0 !important;
-				border-radius: 0 !important;
-			}
 		</style>
 	</head>
 
 	<body>
-		<pre>
-		<code id="codeblock">loading...</code>
-		</pre>
+		<pre id="pre"><code id="codeblock">loading...</code></pre>
 
 		<script src="https://p.seanbehan.ca/prism.js"></script>
 		<script>
@@ -37,6 +26,7 @@
 					.then((response) => response.text())
 					.then((text) => {
 						document.getElementById('codeblock').innerText = text;
+						document.getElementById('pre').classList.add(`language-${lang}`);
 						document.getElementById('codeblock').classList.add(`language-${lang}`);
 						document.getElementById('codeblock').innerHTML = Prism.highlight(text, Prism.languages[lang], lang);
 					});
