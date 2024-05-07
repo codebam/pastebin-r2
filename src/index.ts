@@ -4,10 +4,6 @@ import { prettyJSON } from 'hono/pretty-json';
 // @ts-expect-error inline import
 import index_html from 'inline:./index.html';
 // @ts-expect-error inline import
-import prism_css from 'inline:./prism.css';
-// @ts-expect-error inline import
-import prism_js from 'inline:./prism.js';
-// @ts-expect-error inline import
 import highlight_html from 'inline:./highlight.html';
 
 type Bindings = { R2: R2Bucket };
@@ -43,8 +39,6 @@ app.get('/list', async (c) => {
 	const files = list.objects.map((obj: { key: string }) => obj.key).join('\n');
 	return c.text(files);
 });
-app.get('/prism.css', async () => new Response(prism_css, { headers: { 'Content-Type': 'text/css' } }));
-app.get('/prism.js', async () => new Response(prism_js, { headers: { 'Content-Type': 'application/javascript' } }));
 app.get('/:id', async (c) => {
 	const file = await c.env.R2.get(c.req.param('id'));
 	if (file) {
