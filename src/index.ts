@@ -28,7 +28,7 @@ app.post('/:id/:new_id', async (c) => {
 app.post('/', async (c) => {
 	const id = crypto.randomUUID().slice(0, 5);
 	await c.env.R2.put(id, await c.req.blob());
-	return c.text('https://r2.seanbehan.ca/' + id + '\n');
+	return c.text('https://p.seanbehan.ca/' + id + '\n');
 });
 app.get('/info/:id', async (c) => {
 	const file = await c.env.R2.get(c.req.param('id'));
@@ -36,7 +36,7 @@ app.get('/info/:id', async (c) => {
 });
 app.post('/:id', async (c) => {
 	await c.env.R2.put(c.req.param('id'), await c.req.blob());
-	return c.text('https://r2.seanbehan.ca/' + c.req.param('id') + '\n');
+	return c.text('https://p.seanbehan.ca/' + c.req.param('id') + '\n');
 });
 app.get('/list', async (c) => {
 	const list = await c.env.R2.list();
@@ -63,7 +63,7 @@ app.get('/text/:id', async (c) => {
 	}
 	return new Response('file not found');
 });
-app.get('/highlight/:id', async (c) => {
+app.get('/:id/highlight', async (c) => {
 	const file = await c.env.R2.get(c.req.param('id'));
 	if (file) {
 		return new Response(highlight_html, { headers: { 'Content-Type': 'text/html' } });

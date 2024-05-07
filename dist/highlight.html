@@ -25,7 +25,9 @@
 
 		<script>
 			window.onload = function () {
-				fetch('https://p.seanbehan.ca/' + location.pathname.split('/').pop())
+				const path = location.pathname.split('/');
+				const filename = path[path.length - 2];
+				fetch('https://p.seanbehan.ca/' + filename)
 					.then((response) => response.text())
 					.then((text) => {
 						document.getElementById('codeblock').textContent = text;
