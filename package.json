@@ -10,6 +10,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240502.0",
+    "esbuild-plugin-inline-import": "^1.0.4",
     "typescript": "^5.4.5",
     "wrangler": "^3.53.1"
   },

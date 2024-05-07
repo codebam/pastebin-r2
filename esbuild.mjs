@@ -1,4 +1,5 @@
 import * as esbuild from 'esbuild';
+import inlineImportPlugin from 'esbuild-plugin-inline-import';
 
 await esbuild.build({
 	entryPoints: ['dist/index.js'],
@@ -6,5 +7,5 @@ await esbuild.build({
 	bundle: true,
 	minify: true,
 	outfile: 'dist/index.mjs',
-	plugins: [],
+	plugins: [inlineImportPlugin()],
 });
