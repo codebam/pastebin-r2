@@ -35,7 +35,7 @@
 					.then((response) => response.text())
 					.then((text) => {
 						document.getElementById('codeblock').innerText = text;
-						document.getElementById('pre').classList.add(`language-${lang}`);
+						document.getElementById('codeblock').classList.add(`language-${lang}`);
 						document.getElementById('codeblock').innerHTML = Prism.highlight(text, Prism.languages[lang], lang);
 					});
 			};
