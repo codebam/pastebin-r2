@@ -1,40 +1,44 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" />
-		<link rel="stylesheet" href="//unpkg.com/@catppuccin/highlightjs@0.1.4/css/catppuccin-mocha.css" />
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-		<script src="//cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js"></script>
 
-		<style>
-			body {
-				margin: 0;
-				padding: 0;
-				background-color: #1e1e2e;
-			}
-			.hljs-ln-n {
-				padding-right: 1em;
-			}
-		</style>
-	</head>
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css" />
+	<link rel="stylesheet" href="//unpkg.com/@catppuccin/highlightjs@0.1.4/css/catppuccin-mocha.css" />
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+	<script
+		src="//cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js"></script>
 
-	<body>
-		<pre id="pre"><code id="codeblock">loading...</code></pre>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+			background-color: #1e1e2e;
+		}
 
-		<script>
-			window.onload = function () {
-				const path = location.pathname.split('/');
-				const filename = path[path.length - 2];
-				fetch('https://p.seanbehan.ca/' + filename)
-					.then((response) => response.text())
-					.then((text) => {
-						document.getElementById('codeblock').textContent = text;
-						hljs.highlightAll();
-						hljs.initLineNumbersOnLoad();
-					});
-			};
-		</script>
-	</body>
+		.hljs-ln-n {
+			padding-right: 1em;
+		}
+	</style>
+</head>
+
+<body>
+	<pre id="pre"><code id="codeblock">loading...</code></pre>
+
+	<script>
+		window.onload = function () {
+			const path = location.pathname.split('/');
+			const filename = path[path.length - 2];
+			fetch('https://p.seanbehan.ca/' + filename)
+				.then((response) => response.text())
+				.then((text) => {
+					document.getElementById('codeblock').textContent = text;
+					hljs.highlightAll();
+					hljs.initLineNumbersOnLoad();
+				});
+		};
+	</script>
+</body>
+
 </html>
