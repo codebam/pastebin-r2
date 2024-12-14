@@ -40,7 +40,15 @@ app.get('/list', async (c) => {
 	return c.text(files);
 });
 app.get('/:id', async (c) => {
-	const file = await c.env.R2.get(c.req.param('id'));
+	const id = c.req.param('id');
+	let name: string, ext: string;
+	let file: R2ObjectBody | null;
+	if (id.match(/.*\..*/)) {
+		[name, ext] = id.split('.');
+		file = await c.env.R2.get(name);
+	} else {
+		file = await c.env.R2.get(id);
+	}
 	if (file) {
 		return new Response(await file.blob(), { headers: { etag: file.httpEtag } });
 	}
@@ -51,7 +59,8 @@ app.delete('/:id', async (c: any) => {
 	return c.text('deleted\n');
 });
 app.get('/text/:id', async (c) => {
-	const file = await c.env.R2.get(c.req.param('id'));
+	const id = c.req.param('id');
+	const file = await c.env.R2.get(id);
 	if (file) {
 		return new Response(await file.text(), { headers: { etag: file.httpEtag } });
 	}
