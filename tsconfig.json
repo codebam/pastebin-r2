@@ -9,11 +9,12 @@
 		"types": ["@cloudflare/workers-types"],
 		"esModuleInterop": true,
 		"allowSyntheticDefaultImports": true,
-		"moduleResolution": "node",
+		"moduleResolution": "bundler",
 		"resolveJsonModule": true,
 		"allowJs": true,
 		"forceConsistentCasingInFileNames": true,
 		"declaration": true,
-		"outDir": "dist"
+		"outDir": "dist",
+		"rootDir": "src"
 	}
 }

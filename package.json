@@ -9,12 +9,12 @@
     "start": "wrangler dev"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20241205.0",
+    "@cloudflare/workers-types": "^4.20260426.1",
     "esbuild-plugin-inline-import": "^1.1.0",
-    "typescript": "^5.7.2",
-    "wrangler": "^3.95.0"
+    "typescript": "^6.0.3",
+    "wrangler": "^4.85.0"
   },
   "dependencies": {
-    "hono": "^4.6.13"
+    "hono": "^4.12.15"
   }
 }
