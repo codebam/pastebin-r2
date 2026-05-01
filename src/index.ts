@@ -24,7 +24,7 @@ app.post('/:id/:new_id', async (c) => {
 app.post('/', async (c) => {
 	const id = crypto.randomUUID().slice(0, 5);
 	await c.env.R2.put(id, await c.req.blob());
-	return c.text('https://pastebin.codebam.ca/' + id + '\n');
+	return c.text(new URL(c.req.url).origin + '/' + id + '\n');
 });
 app.get('/info/:id', async (c) => {
 	const file = await c.env.R2.get(c.req.param('id'));
@@ -32,7 +32,7 @@ app.get('/info/:id', async (c) => {
 });
 app.post('/:id', async (c) => {
 	await c.env.R2.put(c.req.param('id'), await c.req.blob());
-	return c.text('https://pastebin.codebam.ca/' + c.req.param('id') + '\n');
+	return c.text(new URL(c.req.url).origin + '/' + c.req.param('id') + '\n');
 });
 app.get('/list', async (c) => {
 	const list = await c.env.R2.list();
