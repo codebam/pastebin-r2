@@ -4,8 +4,8 @@
   "description": "A simple pastebin service using Cloudflare Workers and R2 storage",
   "main": "dist/index.mjs",
   "scripts": {
-    "build": "tsc --project tsconfig.json; node esbuild.mjs",
-    "deploy": "wrangler deploy",
+    "build": "mkdir -p dist && cp src/index.html src/highlight.html dist/ && tsc --project tsconfig.json; node esbuild.mjs",
+    "deploy": "npm run build && wrangler deploy",
     "dev": "wrangler dev",
     "start": "wrangler dev"
   },

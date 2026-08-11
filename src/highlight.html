@@ -312,8 +312,8 @@
             const fullUrlInput = document.getElementById('full-url');
             fullUrlInput.value = fullUrl;
             
-            // Fetch and display the paste content
-            fetch(`https://p.seanbehan.ca/${id}`)
+            // Fetch and display the paste content (same-origin, no hardcoded host)
+            fetch('/' + id)
                 .then(response => response.text())
                 .then(text => {
                     const codeblock = document.getElementById('codeblock');
@@ -340,22 +340,39 @@
             document.getElementById('created-date').textContent = now.toLocaleString();
         });
         
+        function copyTextToClipboard(text, notifyMsg) {
+            const legacy = function (cb) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.setAttribute('readonly', '');
+                ta.style.position = 'fixed';
+                ta.style.top = '-1000px';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                ta.setSelectionRange(0, text.length);
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                cb();
+            };
+            const done = function () { showNotification(notifyMsg, 'success'); };
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(done).catch(function () {
+                    legacy(done);
+                });
+            } else {
+                legacy(done);
+            }
+        }
+
         function copyToClipboard() {
             const codeblock = document.getElementById('codeblock');
-            navigator.clipboard.writeText(codeblock.textContent).then(() => {
-                showNotification('Copied to clipboard', 'success');
-            }).catch(err => {
-                showNotification('Failed to copy: ' + err, 'error');
-            });
+            copyTextToClipboard(codeblock.textContent, 'Copied to clipboard');
         }
-        
+
         function copyUrlToClipboard() {
             const url = document.getElementById('full-url').value;
-            navigator.clipboard.writeText(url).then(() => {
-                showNotification('URL copied to clipboard', 'success');
-            }).catch(err => {
-                showNotification('Failed to copy URL: ' + err, 'error');
-            });
+            copyTextToClipboard(url, 'URL copied to clipboard');
         }
         
         function downloadText() {

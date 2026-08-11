@@ -198,7 +198,9 @@
         }
 
         .url-display input {
-            flex: 1;
+            flex: 1 1 auto;
+            min-width: 0;
+            width: 0;
             padding: 12px;
             border: 1px solid var(--border-color);
             border-radius: 6px 0 0 6px;
@@ -215,9 +217,11 @@
         }
 
         .copy-button {
+            flex: 0 0 auto;
             position: relative;
             height: 100%;
             padding: 8px 12px;
+            white-space: nowrap;
             background-color: var(--secondary-color);
             color: white;
             border: none;
@@ -329,7 +333,76 @@
     </div>
 
     <script>
+        // Global helper used by the inline onclick="copyToClipboard()" URL button.
+        // Defined here (global scope) so the inline handler can resolve it.
+        function legacyCopyInline(text, done) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'fixed';
+            ta.style.top = '-1000px';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            ta.setSelectionRange(0, text.length);
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            done();
+        }
+
+        function copyToClipboard() {
+            const el = document.getElementById('paste-url');
+            if (el && el.value) {
+                const text = el.value;
+                const notify = document.getElementById('notification');
+                const done = function () {
+                    notify.classList.add('show');
+                    setTimeout(function () { notify.classList.remove('show'); }, 2000);
+                };
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text).then(done).catch(function () {
+                        legacyCopyInline(text, done);
+                    });
+                } else {
+                    legacyCopyInline(text, done);
+                }
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            // Robust copy-to-clipboard that works even when the Clipboard API is
+            // blocked (unfocused tab / denied permission). Falls back to a hidden
+            // textarea + execCommand('copy').
+            function copyTextToClipboard(text) {
+                return new Promise(function (resolve, reject) {
+                    if (navigator.clipboard && window.isSecureContext) {
+                        navigator.clipboard.writeText(text).then(resolve).catch(function () {
+                            legacyCopy(text, resolve, reject);
+                        });
+                    } else {
+                        legacyCopy(text, resolve, reject);
+                    }
+                });
+            }
+
+            function legacyCopy(text, resolve, reject) {
+                try {
+                    const ta = document.createElement('textarea');
+                    ta.value = text;
+                    ta.setAttribute('readonly', '');
+                    ta.style.position = 'fixed';
+                    ta.style.top = '-1000px';
+                    ta.style.opacity = '0';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    ta.setSelectionRange(0, text.length);
+                    const ok = document.execCommand('copy');
+                    document.body.removeChild(ta);
+                    ok ? resolve() : reject(new Error('execCommand copy failed'));
+                } catch (e) {
+                    reject(e);
+                }
+            }
             const pasteText = document.getElementById('paste-text');
             const fileUpload = document.getElementById('file-upload');
             const submitBtn = document.getElementById('submit-btn');
@@ -407,7 +480,9 @@
                 }
 
                 try {
-                    const response = await fetch('https://p.seanbehan.ca', {
+                    // Use same-origin so the worker returns a URL on the domain
+                    // the user is actually visiting (no hardcoded hostname).
+                    const response = await fetch('/', {
                         method: 'POST',
                         body: text
                     });
@@ -431,7 +506,7 @@
                     return;
                 }
 
-                navigator.clipboard.writeText(text).then(() => {
+                copyTextToClipboard(text).then(() => {
                     showNotification('Copied to clipboard!');
                 }).catch(err => {
                     showNotification('Failed to copy: ' + err, 'error');
@@ -460,18 +535,6 @@
                 resultContainer.style.display = '';
                 pasteUrl.value = url;
                 showNotification('Paste created successfully!', 'success');
-            }
-
-            // Copy URL functionality
-            function copyToClipboard() {
-                if (pasteUrl.value) {
-                    navigator.clipboard.writeText(pasteUrl.value).then(() => {
-                        notification.classList.add('show');
-                        setTimeout(() => {
-                            notification.classList.remove('show');
-                        }, 2000);
-                    });
-                }
             }
 
             // Show notifications

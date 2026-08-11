@@ -12,6 +12,16 @@ const app = new Hono<{ Bindings: Bindings }>();
 app.use('*', cors());
 app.use('/info/*', prettyJSON());
 
+// Build the correct origin for the paste URL. Cloudflare Workers populate the
+// host and x-forwarded-proto headers with what the client actually requested,
+// so this returns the right domain AND scheme no matter which hostname hits the
+// worker (p.seanbehan.ca, paste.codebam.ca, localhost, etc.).
+function getBaseUrl(c: { req: { url: string; header: (n: string) => string | undefined } }): string {
+	const proto = c.req.header('x-forwarded-proto') || new URL(c.req.url).protocol.replace(':', '');
+	const host = c.req.header('host') || new URL(c.req.url).host;
+	return `${proto}://${host}`;
+}
+
 // Route to move a paste from one ID to another
 app.post('/:id/:new_id', async (c) => {
 	try {
@@ -33,19 +43,8 @@ app.post('/', async (c) => {
 	try {
 		const id = crypto.randomUUID().slice(0, 5);
 		await c.env.R2.put(id, await c.req.blob());
-		
-		// Determine base URL - Cloudflare Workers may have the wrong origin in c.req.url
-		// Try multiple approaches to get correct domain
-		let baseUrl;
-		if (c.req.header('host')) {
-			const host = c.req.header('host');
-			baseUrl = `${c.req.url.startsWith('https') ? 'https' : 'http'}://${host}`;
-		} else {
-			const url = new URL(c.req.url);
-			baseUrl = url.origin;
-		}
-		
-		return c.text(baseUrl + '/' + id + '\n');
+
+		return c.text(getBaseUrl(c) + '/' + id + '\n');
 	} catch (error) {
 		return c.text(`Error: ${error}\n`, 500);
 	}
@@ -65,19 +64,7 @@ app.get('/info/:id', async (c) => {
 app.post('/:id', async (c) => {
 	try {
 		await c.env.R2.put(c.req.param('id'), await c.req.blob());
-		
-		// Determine base URL - Cloudflare Workers may have the wrong origin in c.req.url
-		// Try multiple approaches to get correct domain
-		let baseUrl;
-		if (c.req.header('host')) {
-			const host = c.req.header('host');
-			baseUrl = `${c.req.url.startsWith('https') ? 'https' : 'http'}://${host}`;
-		} else {
-			const url = new URL(c.req.url);
-			baseUrl = url.origin;
-		}
-		
-		return c.text(baseUrl + '/' + c.req.param('id') + '\n');
+		return c.text(getBaseUrl(c) + '/' + c.req.param('id') + '\n');
 	} catch (error) {
 		return c.text(`Error: ${error}\n`, 500);
 	}
