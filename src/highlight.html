@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paste Content - Sean's Pastebin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3a0ca3;
+            --background-color: #f8f9fa;
+            --text-color: #212529;
+            --border-color: #dee2e6;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --success-color: #2ecc71;
+            --error-color: #e74c3c;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --background-color: #121212;
+                --text-color: #f8f9fa;
+                --border-color: #343a40;
+            }
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .info-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: rgba(67, 97, 238, 0.1);
+            border-radius: 8px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .info-bar {
+                background-color: rgba(67, 97, 238, 0.15);
+            }
+        }
+
+        .paste-id {
+            font-family: monospace;
+            padding: 8px 12px;
+            border-radius: 4px;
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .paste-id {
+                background-color: rgba(255, 255, 255, 0.1);
+            }
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 25px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .card {
+                background-color: #1e1e1e;
+            }
+        }
+
+        .code-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            z-index: 10;
+        }
+
+        .copy-btn:hover {
+            background-color: var(--secondary-color);
+        }
+
+        pre {
+            margin: 0;
+            padding: 15px;
+            overflow: auto;
+            border-radius: 6px;
+            background-color: #2d2d2d;
+            box-sizing: border-box; /* This ensures padding doesn't increase the width */
+        }
+
+        @media (prefers-color-scheme: dark) {
+            pre {
+                background-color: #2d2d2d;
+            }
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .btn-success {
+            background-color: #2ecc71;
+        }
+
+        .btn-success:hover {
+            background-color: #27ae60;
+        }
+
+        .btn-error {
+            background-color: #e74c3c;
+        }
+
+        .btn-error:hover {
+            background-color: #c0392b;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+            margin-top: 30px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .notification {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .notification.success {
+            background-color: rgba(46, 204, 113, 0.1);
+            color: #27ae60;
+            border: 1px solid #27ae60;
+        }
+
+        .notification.error {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
+
+        .url-display {
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .url-display {
+                background-color: rgba(255, 255, 255, 0.05);
+                border-color: #444;
+            }
+        }
+
+        .url-display input {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            background-color: transparent;
+            font-family: monospace;
+        }
+
+        .url-display button {
+            margin-left: 10px;
+        }
+
+        .language-indicator {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            background-color: rgba(67, 97, 238, 0.1);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .language-indicator {
+                background-color: rgba(67, 97, 238, 0.2);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Sean's Pastebin</h1>
+            <p>Paste content with syntax highlighting</p>
+        </header>
+
+        <div id="notification-area"></div>
+
+        <div class="info-bar">
+            <div>
+                <strong>ID:</strong> <span class="paste-id" id="paste-id">loading...</span>
+            </div>
+            <div>
+                <strong>Created:</strong>
+                <span id="created-date">loading...</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="action-buttons">
+                <button class="btn" onclick="downloadText()">Download Text</button>
+                <button class="btn btn-success" onclick="copyToClipboard()">Copy to Clipboard</button>
+                <button class="btn btn-error" onclick="window.location.href='/'">New Paste</button>
+            </div>
+
+            <div class="code-container">
+                <!-- The code will be placed here dynamically -->
+                <pre><code id="codeblock" class="hljs">Loading...</code></pre>
+                <button class="copy-btn" onclick="copyToClipboard()">Copy</button>
+            </div>
+
+            <div class="url-display">
+                <input type="text" id="full-url" value="" readonly />
+                <button class="btn" onclick="copyUrlToClipboard()">Copy URL</button>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <div class="language-indicator">Language: <span id="language-name">Unknown</span></div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Source code available on <a href="https://github.com/codebam/pastebin-r2">GitHub</a></p>
+            <p>This service uses Cloudflare R2 for storage and Hono framework.</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get the paste ID from URL
+            const path = window.location.pathname.split('/');
+            const id = path[path.length - 2];
+            
+            const pasteIdElement = document.getElementById('paste-id');
+            pasteIdElement.textContent = id;
+            
+            // Set current URL in display
+            const fullUrl = window.location.href.split('/').slice(0, -1).join('/') + '/';
+            const fullUrlInput = document.getElementById('full-url');
+            fullUrlInput.value = fullUrl;
+            
+            // Fetch and display the paste content
+            fetch(`https://p.seanbehan.ca/${id}`)
+                .then(response => response.text())
+                .then(text => {
+                    const codeblock = document.getElementById('codeblock');
+                    codeblock.textContent = text;
+                    
+                    // Highlight the code
+                    hljs.highlightAll();
+                    
+                    // Try to determine language from file extension or file content
+                    const languageName = getLanguageName(id);
+                    document.getElementById('language-name').textContent = languageName;
+                })
+                .catch(error => {
+                    const codeblock = document.getElementById('codeblock');
+                    codeblock.textContent = 'Failed to load paste content: ' + error.message;
+                    console.error('Error loading paste:', error);
+                    
+                    // Show error notification
+                    showNotification('Failed to load paste', 'error')
+                });
+                
+            // Set creation date (just for now showing current date)
+            const now = new Date();
+            document.getElementById('created-date').textContent = now.toLocaleString();
+        });
+        
+        function copyToClipboard() {
+            const codeblock = document.getElementById('codeblock');
+            navigator.clipboard.writeText(codeblock.textContent).then(() => {
+                showNotification('Copied to clipboard', 'success');
+            }).catch(err => {
+                showNotification('Failed to copy: ' + err, 'error');
+            });
+        }
+        
+        function copyUrlToClipboard() {
+            const url = document.getElementById('full-url').value;
+            navigator.clipboard.writeText(url).then(() => {
+                showNotification('URL copied to clipboard', 'success');
+            }).catch(err => {
+                showNotification('Failed to copy URL: ' + err, 'error');
+            });
+        }
+        
+        function downloadText() {
+            const text = document.getElementById('codeblock').textContent;
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `paste_${new Date().toISOString().slice(0, 10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            
+            // Clean up
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+        }
+        
+        function getLanguageName(id) {
+            const extensions = [
+                { ext: '.js', name: 'JavaScript' },
+                { ext: '.ts', name: 'TypeScript' },
+                { ext: '.py', name: 'Python' },
+                { ext: '.html', name: 'HTML' },
+                { ext: '.css', name: 'CSS' },
+                { ext: '.json', name: 'JSON' },
+                { ext: '.xml', name: 'XML' },
+                { ext: '.md', name: 'Markdown' },
+                { ext: '.sql', name: 'SQL' },
+                { ext: '.sh', name: 'Shell' }
+            ];
+            
+            const extMatch = extensions.find(ext => id.endsWith(ext.ext));
+            if (extMatch) {
+                return extMatch.name;
+            }
+            
+            // Try to detect from content
+            if (id.includes('.')) {
+                const parts = id.split('.');
+                if (parts.length > 1) {
+                    return parts[parts.length - 1].toUpperCase();
+                }
+            }
+            
+            return 'Plain Text';
+        }
+        
+        function showNotification(message, type = 'success') {
+            const notificationArea = document.getElementById('notification-area');
+            const notificationEl = document.createElement('div');
+            notificationEl.className = `notification ${type}`;
+            notificationEl.textContent = message;
+            
+            notificationArea.appendChild(notificationEl);
+            
+            setTimeout(() => {
+                notificationEl.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

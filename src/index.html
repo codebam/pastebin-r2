@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sean's Pastebin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3a0ca3;
+            --background-color: #f8f9fa;
+            --text-color: #212529;
+            --border-color: #dee2e6;
+            --success-color: #2ecc71;
+            --error-color: #e74c3c;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --background-color: #121212;
+                --text-color: #f8f9fa;
+                --border-color: #343a40;
+            }
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .app-description {
+            font-size: 1.1em;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 25px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .card {
+                background-color: #1e1e1e;
+            }
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-family: monospace;
+            resize: vertical;
+            background-color: white;
+            color: var(--text-color);
+            box-sizing: border-box; /* This ensures padding doesn't increase the width */
+        }
+
+        @media (prefers-color-scheme: dark) {
+            textarea {
+                background-color: #2d2d2d;
+                border-color: #444;
+            }
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+        }
+
+        .btn-success:hover {
+            background-color: #27ae60;
+        }
+
+        .btn-error {
+            background-color: var(--error-color);
+        }
+
+        .btn-error:hover {
+            background-color: #c0392b;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .upload-container {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            margin: 20px 0;
+            transition: all 0.3s;
+        }
+
+        .upload-container:hover {
+            border-color: var(--primary-color);
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            opacity: 0.5;
+            margin-bottom: 10px;
+        }
+
+        .clipboard-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 6px;
+            background-color: var(--success-color);
+            color: white;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s;
+        }
+
+        .clipboard-notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+            margin-top: 30px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .clipboard-section {
+            display: flex;
+            align-items: stretch;
+        }
+
+        .clipboard-section > div {
+            flex: 1;
+        }
+
+        .url-display {
+            position: relative;
+        }
+
+        .url-display input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px 0 0 6px;
+            background-color: white;
+            color: var(--text-color);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .url-display input {
+                background-color: #2d2d2d;
+                border-color: #444;
+            }
+        }
+
+        .copy-button {
+            position: absolute;
+            right: 0;
+            top: 0;
+            height: 100%;
+            padding: 12px 20px;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 0 6px 6px 0;
+            cursor: pointer;
+        }
+
+        .paste-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .action-button-group {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .notification {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .notification.success {
+            background-color: rgba(46, 204, 113, 0.1);
+            color: #27ae60;
+            border: 1px solid #27ae60;
+        }
+
+        .notification.error {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+        }
+
+        .notification.warning {
+            background-color: rgba(241, 196, 15, 0.1);
+            color: #f1c40f;
+            border: 1px solid #f1c40f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Sean's Pastebin</h1>
+            <p class="app-description">Share text snippets securely and easily</p>
+        </header>
+
+        <div class="card">
+            <div id="notification-area"></div>
+            
+            <div class="form-group">
+                <label for="paste-text">Paste your text here:</label>
+                <textarea id="paste-text" placeholder="Enter or paste your content here..."></textarea>
+            </div>
+
+            <div class="upload-container" id="drop-zone">
+                <div class="upload-icon">📁</div>
+                <p>Drag and drop a file here<br>or</p>
+                <input type="file" id="file-upload" style="display: none;" />
+                <button class="btn" onclick="document.getElementById('file-upload').click()">
+                    Select File
+                </button>
+            </div>
+
+            <div class="action-button-group">
+                <button class="btn" id="submit-btn">Submit</button>
+                <button class="btn btn-success" id="copy-to-clipboard-btn">Copy to Clipboard</button>
+                <button class="btn btn-error" id="clear-btn">Clear</button>
+            </div>
+
+            <div id="result-container" style="display: none; margin-top: 20px;">
+                <div class="notification success" id="result-text">
+                    Your paste is ready!
+                </div>
+                
+                <div class="url-display">
+                    <input type="text" id="paste-url" readonly />
+                    <button class="copy-button" onclick="copyToClipboard()">Copy</button>
+                </div>
+            </div>
+
+            <div class="clipboard-section">
+                <div>
+                    <p><strong>Recent Paste:</strong></p>
+                    <textarea id="recent-paste" placeholder="(Paste any text here)" rows="4"></textarea>
+                    <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px;">
+                        <button class="btn" onclick="pasteFromClipboard()">Paste from Clipboard</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Source code available on <a href="https://github.com/codebam/pastebin-r2">GitHub</a></p>
+            <p>This service uses Cloudflare R2 for storage and Hono framework.</p>
+        </footer>
+    </div>
+
+    <div class="clipboard-notification" id="notification">
+        URL copied to clipboard!
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const pasteText = document.getElementById('paste-text');
+            const fileUpload = document.getElementById('file-upload');
+            const submitBtn = document.getElementById('submit-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const copyToClipboardBtn = document.getElementById('copy-to-clipboard-btn');
+            const resultContainer = document.getElementById('result-container');
+            const resultText = document.getElementById('result-text');
+            const pasteUrl = document.getElementById('paste-url');
+            const notification = document.getElementById('notification');
+            const dropZone = document.getElementById('drop-zone');
+            const recentPaste = document.getElementById('recent-paste');
+
+            // Handle drag and drop
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight() {
+                dropZone.style.borderColor = '#4361ee';
+                dropZone.style.backgroundColor = 'rgba(67, 97, 238, 0.1)';
+            }
+
+            function unhighlight() {
+                dropZone.style.borderColor = '#dee2e6';
+                dropZone.style.backgroundColor = '';
+            }
+
+            dropZone.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if (files.length > 0) {
+                    const file = files[0];
+                    readTextFromFile(file);
+                }
+            }
+
+            // Handle file selection
+            fileUpload.addEventListener('change', function(e) {
+                if (this.files && this.files[0]) {
+                    const file = this.files[0];
+                    readTextFromFile(file);
+                }
+            });
+
+            function readTextFromFile(file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    pasteText.value = e.target.result;
+                };
+                reader.readAsText(file);
+            }
+
+            // Submit functionality
+            submitBtn.addEventListener('click', async function() {
+                const text = pasteText.value.trim();
+                
+                if (!text) {
+                    showNotification('Please enter some content to paste', 'error');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('https://p.seanbehan.ca', {
+                        method: 'POST',
+                        body: text
+                    });
+
+                    if (response.ok) {
+                        const url = await response.text();
+                        showResult(url);
+                    } else {
+                        showNotification('Failed to submit paste: ' + response.status, 'error');
+                    }
+                } catch (error) {
+                    showNotification('Error submitting paste: ' + error.message, 'error');
+                }
+            });
+
+            // Copy to clipboard functionality
+            copyToClipboardBtn.addEventListener('click', function() {
+                const text = pasteText.value.trim();
+                if (!text) {
+                    showNotification('Nothing to copy to clipboard', 'warning');
+                    return;
+                }
+
+                navigator.clipboard.writeText(text).then(() => {
+                    showNotification('Copied to clipboard!');
+                }).catch(err => {
+                    showNotification('Failed to copy: ' + err, 'error');
+                });
+            });
+
+            // Clear functionality
+            clearBtn.addEventListener('click', function() {
+                pasteText.value = '';
+                resultContainer.style.display = 'none';
+                recentPaste.value = '';
+                showNotification('Cleared!', 'success');
+            });
+
+            // Paste from clipboard button
+            function pasteFromClipboard() {
+                navigator.clipboard.readText().then(text => {
+                    recentPaste.value = text;
+                }).catch(err => {
+                    showNotification('Failed to read clipboard: ' + err, 'error');
+                });
+            }
+
+            // Show results
+            function showResult(url) {
+                resultContainer.style.display = '';
+                pasteUrl.value = url;
+                showNotification('Paste created successfully!', 'success');
+            }
+
+            // Copy URL functionality
+            function copyToClipboard() {
+                if (pasteUrl.value) {
+                    navigator.clipboard.writeText(pasteUrl.value).then(() => {
+                        notification.classList.add('show');
+                        setTimeout(() => {
+                            notification.classList.remove('show');
+                        }, 2000);
+                    });
+                }
+            }
+
+            // Show notifications
+            function showNotification(message, type = 'success') {
+                const notificationArea = document.getElementById('notification-area');
+                const notificationEl = document.createElement('div');
+                notificationEl.className = `notification ${type}`;
+                notificationEl.textContent = message;
+                
+                notificationArea.appendChild(notificationEl);
+                
+                setTimeout(() => {
+                    notificationEl.remove();
+                }, 5000);
+            }
+
+            // Load initial paste content from clipboard if available
+            navigator.clipboard.readText().then(text => {
+                if (text) {
+                    recentPaste.value = text;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
