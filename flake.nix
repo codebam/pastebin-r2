@@ -19,10 +19,10 @@
         devShell = pkgs.mkShell {
           buildInputs = with pkgs; [
             nodejs
-            nodePackages.npm
+            npm
             typescript
-            nodePackages.typescript-language-server
-            nodePackages.prettier
+            typescript-language-server
+            prettier
           ];
 
           # Set environment for Nix development
@@ -37,7 +37,7 @@
 
           buildInputs = with pkgs; [
             nodejs
-            nodePackages.npm
+            npm
           ];
 
           # Nix build steps
@@ -45,7 +45,7 @@
             # Install dependencies
             npm install
 
-            # Build the project
+            # Build the project 
             npm run build
           '';
 
