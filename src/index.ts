@@ -34,12 +34,18 @@ app.post('/', async (c) => {
 		const id = crypto.randomUUID().slice(0, 5);
 		await c.env.R2.put(id, await c.req.blob());
 		
-		// Since this is a Cloudflare Worker, we should use the host header or
-		// determine proper base URL from request
-		const url = new URL(c.req.url);
+		// Determine base URL - Cloudflare Workers may have the wrong origin in c.req.url
+		// Try multiple approaches to get correct domain
+		let baseUrl;
+		if (c.req.header('host')) {
+			const host = c.req.header('host');
+			baseUrl = `${c.req.url.startsWith('https') ? 'https' : 'http'}://${host}`;
+		} else {
+			const url = new URL(c.req.url);
+			baseUrl = url.origin;
+		}
 		
-		// Return URL with the actual request origin (which should be the correct domain)
-		return c.text(url.origin + '/' + id + '\n');
+		return c.text(baseUrl + '/' + id + '\n');
 	} catch (error) {
 		return c.text(`Error: ${error}\n`, 500);
 	}
@@ -59,7 +65,19 @@ app.get('/info/:id', async (c) => {
 app.post('/:id', async (c) => {
 	try {
 		await c.env.R2.put(c.req.param('id'), await c.req.blob());
-		return c.text(new URL(c.req.url).origin + '/' + c.req.param('id') + '\n');
+		
+		// Determine base URL - Cloudflare Workers may have the wrong origin in c.req.url
+		// Try multiple approaches to get correct domain
+		let baseUrl;
+		if (c.req.header('host')) {
+			const host = c.req.header('host');
+			baseUrl = `${c.req.url.startsWith('https') ? 'https' : 'http'}://${host}`;
+		} else {
+			const url = new URL(c.req.url);
+			baseUrl = url.origin;
+		}
+		
+		return c.text(baseUrl + '/' + c.req.param('id') + '\n');
 	} catch (error) {
 		return c.text(`Error: ${error}\n`, 500);
 	}
