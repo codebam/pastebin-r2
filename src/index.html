@@ -192,15 +192,19 @@
 
         .url-display {
             position: relative;
+            display: flex;
+            align-items: center;
+            margin-top: 15px;
         }
 
         .url-display input {
-            width: 100%;
+            flex: 1;
             padding: 12px;
             border: 1px solid var(--border-color);
             border-radius: 6px 0 0 6px;
             background-color: white;
             color: var(--text-color);
+            box-sizing: border-box;
         }
 
         @media (prefers-color-scheme: dark) {
@@ -211,11 +215,9 @@
         }
 
         .copy-button {
-            position: absolute;
-            right: 0;
-            top: 0;
+            position: relative;
             height: 100%;
-            padding: 12px 20px;
+            padding: 8px 12px;
             background-color: var(--secondary-color);
             color: white;
             border: none;
