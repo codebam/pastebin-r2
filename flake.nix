@@ -19,7 +19,6 @@
         devShell = pkgs.mkShell {
           buildInputs = with pkgs; [
             nodejs
-            npm
             typescript
             typescript-language-server
             prettier
@@ -45,7 +44,7 @@
             # Install dependencies
             npm install
 
-            # Build the project 
+            # Build the project
             npm run build
           '';
 
