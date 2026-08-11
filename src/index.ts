@@ -34,9 +34,12 @@ app.post('/', async (c) => {
 		const id = crypto.randomUUID().slice(0, 5);
 		await c.env.R2.put(id, await c.req.blob());
 		
-		// Get the base URL from the request
-		const baseURL = new URL(c.req.url).origin;
-		return c.text(baseURL + '/' + id + '\n');
+		// Since this is a Cloudflare Worker, we should use the host header or
+		// determine proper base URL from request
+		const url = new URL(c.req.url);
+		
+		// Return URL with the actual request origin (which should be the correct domain)
+		return c.text(url.origin + '/' + id + '\n');
 	} catch (error) {
 		return c.text(`Error: ${error}\n`, 500);
 	}
