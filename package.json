@@ -1,20 +1,30 @@
 {
-  "name": "pastebin-ts-worker",
-  "version": "0.0.0",
-  "private": true,
+  "name": "pastebin-r2",
+  "version": "0.1.0",
+  "description": "A simple pastebin service using Cloudflare Workers and R2 storage",
+  "main": "dist/index.mjs",
   "scripts": {
     "build": "tsc --project tsconfig.json; node esbuild.mjs",
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
     "start": "wrangler dev"
   },
+  "keywords": [
+    "pastebin",
+    "cloudflare",
+    "workers",
+    "r2",
+    "hono"
+  ],
+  "author": "Sean Beahan",
+  "license": "MIT",
+  "dependencies": {
+    "hono": "^4.12.15"
+  },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260426.1",
     "esbuild-plugin-inline-import": "^1.1.0",
     "typescript": "^6.0.3",
     "wrangler": "^4.85.0"
-  },
-  "dependencies": {
-    "hono": "^4.12.15"
   }
 }
