@@ -50,11 +50,20 @@ app.post('/', async (c) => {
 	}
 });
 
-// Route to get information about a paste
+// Route to get information about a paste. R2Object exposes its fields via
+// getters, so it does not survive JSON.stringify — pick them out explicitly.
 app.get('/info/:id', async (c) => {
 	try {
-		const file = await c.env.R2.get(c.req.param('id'));
-		return c.json(file);
+		const file = await c.env.R2.head(c.req.param('id'));
+		if (!file) {
+			return c.json({ error: 'not found' }, 404);
+		}
+		return c.json({
+			key: file.key,
+			size: file.size,
+			uploaded: file.uploaded,
+			etag: file.httpEtag,
+		});
 	} catch (error) {
 		return c.text(`Error: ${error}\n`, 500);
 	}

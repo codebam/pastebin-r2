@@ -1,440 +1,305 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Paste Content - Sean's Pastebin</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
-    <style>
-        :root {
-            --primary-color: #4361ee;
-            --secondary-color: #3a0ca3;
-            --background-color: #f8f9fa;
-            --text-color: #212529;
-            --border-color: #dee2e6;
-            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            --success-color: #2ecc71;
-            --error-color: #e74c3c;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>paste · Sean's Pastebin</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>▤</text></svg>">
+<link rel="stylesheet" media="(prefers-color-scheme: dark)"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<link rel="stylesheet" media="(prefers-color-scheme: light)"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<style>
+:root{
+  --bg:#0b0d10; --panel:#111418; --panel-2:#161a1f; --line:#232931;
+  --fg:#d7dee6; --muted:#7e8894; --dim:#59626e;
+  --accent:#5ee6a8; --accent-dim:rgba(94,230,168,.12);
+  --amber:#e8b757; --red:#f0736a;
+  --mono:ui-monospace,"SF Mono","JetBrains Mono","Fira Code",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#f4f6f4; --panel:#ffffff; --panel-2:#eef1ee; --line:#d8ded8;
+    --fg:#12171c; --muted:#5b6570; --dim:#8b939c;
+    --accent:#0f8d5c; --accent-dim:rgba(15,141,92,.09);
+    --amber:#9a6f14; --red:#c93a31;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--mono);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1040px;margin:0 auto;padding:0 16px 60px}
 
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --background-color: #121212;
-                --text-color: #f8f9fa;
-                --border-color: #343a40;
-            }
-        }
+.top{display:flex;align-items:baseline;gap:10px;padding:34px 0 20px;border-bottom:1px solid var(--line);margin-bottom:24px}
+.top .prompt{color:var(--accent)}
+.top a.h{font-size:15px;font-weight:600;margin:0;color:var(--fg);text-decoration:none}
+.top a.h:hover{color:var(--accent)}
+.top .meta{margin-left:auto;color:var(--dim);font-size:12px}
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: var(--background-color);
-            color: var(--text-color);
-            line-height: 1.6;
-        }
+#alerts{display:grid;gap:8px;margin-bottom:16px}
+#alerts:empty{margin-bottom:0}
+.alert{padding:8px 12px;font-size:12.5px;border:1px solid}
+.alert.success{color:var(--accent);border-color:var(--accent);background:var(--accent-dim)}
+.alert.error{color:var(--red);border-color:var(--red);background:rgba(240,115,106,.1)}
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
+.panel{border:1px solid var(--line);background:var(--panel)}
+.panel + .panel{margin-top:20px}
+.bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:8px 12px;background:var(--panel-2);
+  border-bottom:1px solid var(--line);font-size:12px;color:var(--muted)}
+.bar .id{color:var(--accent)}
+.bar .sep{color:var(--dim)}
+.bar .actions{margin-left:auto;display:flex;gap:8px}
+.btn{font-family:inherit;font-size:12px;padding:4px 10px;border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer;transition:.12s;text-decoration:none;display:inline-block}
+.btn:hover{color:var(--fg);border-color:var(--dim)}
+.btn:focus-visible{outline:1px solid var(--accent);outline-offset:2px}
+.btn.go{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
 
-        header {
-            text-align: center;
-            padding: 20px 0;
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 30px;
-        }
+.viewer{display:flex;max-height:70vh;overflow:auto}
+.gutter{flex:0 0 auto;padding:12px 10px;text-align:right;color:var(--dim);font-size:13px;line-height:1.6;
+  user-select:none;border-right:1px solid var(--line);background:var(--panel-2);white-space:pre}
+pre{margin:0;flex:1 1 auto;min-width:0}
+pre code.hljs{display:block;padding:12px 14px;background:transparent;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre;overflow:visible}
 
-        h1 {
-            color: var(--primary-color);
-            margin-bottom: 10px;
-        }
+.urlrow{display:flex;border-top:1px solid var(--line)}
+.urlrow input{flex:1;min-width:0;border:0;background:var(--panel-2);color:var(--fg);font-family:inherit;font-size:13px;padding:9px 11px;outline:0}
+.urlrow button{border:0;border-left:1px solid var(--line);background:var(--panel-2);color:var(--accent);font-family:inherit;font-size:12.5px;padding:9px 14px;cursor:pointer}
+.urlrow button:hover{background:var(--line)}
 
-        .info-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 20px;
-            padding: 15px;
-            background-color: rgba(67, 97, 238, 0.1);
-            border-radius: 8px;
-        }
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,14px);padding:8px 16px;
+  border:1px solid var(--accent);background:var(--panel);color:var(--accent);font-size:12.5px;
+  opacity:0;pointer-events:none;transition:.18s;z-index:50}
+.toast.show{opacity:1;transform:translate(-50%,0)}
 
-        @media (prefers-color-scheme: dark) {
-            .info-bar {
-                background-color: rgba(67, 97, 238, 0.15);
-            }
-        }
+footer{margin-top:28px;color:var(--dim);font-size:12px}
+footer a{color:var(--muted)}
 
-        .paste-id {
-            font-family: monospace;
-            padding: 8px 12px;
-            border-radius: 4px;
-            background-color: rgba(0, 0, 0, 0.1);
-        }
-
-        @media (prefers-color-scheme: dark) {
-            .paste-id {
-                background-color: rgba(255, 255, 255, 0.1);
-            }
-        }
-
-        .card {
-            background-color: white;
-            border-radius: 8px;
-            padding: 25px;
-            box-shadow: var(--card-shadow);
-            margin-bottom: 25px;
-        }
-
-        @media (prefers-color-scheme: dark) {
-            .card {
-                background-color: #1e1e1e;
-            }
-        }
-
-        .code-container {
-            position: relative;
-            margin-bottom: 20px;
-        }
-
-        .copy-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            padding: 8px 12px;
-            border-radius: 4px;
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            z-index: 10;
-        }
-
-        .copy-btn:hover {
-            background-color: var(--secondary-color);
-        }
-
-        pre {
-            margin: 0;
-            padding: 15px;
-            overflow: auto;
-            border-radius: 6px;
-            background-color: #2d2d2d;
-            box-sizing: border-box; /* This ensures padding doesn't increase the width */
-        }
-
-        @media (prefers-color-scheme: dark) {
-            pre {
-                background-color: #2d2d2d;
-            }
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-
-        .btn {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
-        }
-
-        .btn:hover {
-            background-color: var(--secondary-color);
-        }
-
-        .btn-success {
-            background-color: #2ecc71;
-        }
-
-        .btn-success:hover {
-            background-color: #27ae60;
-        }
-
-        .btn-error {
-            background-color: #e74c3c;
-        }
-
-        .btn-error:hover {
-            background-color: #c0392b;
-        }
-
-        footer {
-            text-align: center;
-            padding: 20px;
-            border-top: 1px solid var(--border-color);
-            margin-top: 30px;
-            font-size: 0.9em;
-            color: #666;
-        }
-
-        .notification {
-            padding: 15px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .notification.success {
-            background-color: rgba(46, 204, 113, 0.1);
-            color: #27ae60;
-            border: 1px solid #27ae60;
-        }
-
-        .notification.error {
-            background-color: rgba(231, 76, 60, 0.1);
-            color: #e74c3c;
-            border: 1px solid #e74c3c;
-        }
-
-        .url-display {
-            padding: 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background-color: rgba(0, 0, 0, 0.05);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-top: 15px;
-        }
-
-        @media (prefers-color-scheme: dark) {
-            .url-display {
-                background-color: rgba(255, 255, 255, 0.05);
-                border-color: #444;
-            }
-        }
-
-        .url-display input {
-            flex: 1;
-            padding: 8px;
-            border: none;
-            background-color: transparent;
-            font-family: monospace;
-            box-sizing: border-box;
-        }
-
-        .url-display button {
-            margin-left: 10px;
-            padding: 8px 12px;
-        }
-
-        .language-indicator {
-            display: inline-block;
-            margin-top: 15px;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.9em;
-            background-color: rgba(67, 97, 238, 0.1);
-        }
-
-        @media (prefers-color-scheme: dark) {
-            .language-indicator {
-                background-color: rgba(67, 97, 238, 0.2);
-            }
-        }
-    </style>
+@media (max-width:560px){
+  .bar .actions{margin-left:0;width:100%}
+  .btn{flex:1 1 auto;text-align:center}
+}
+</style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Sean's Pastebin</h1>
-            <p>Paste content with syntax highlighting</p>
-        </header>
+<div class="wrap">
+  <div class="top">
+    <span class="prompt">~$</span>
+    <a class="h" href="/">pastebin</a>
+    <span class="meta" id="head-meta">cat</span>
+  </div>
 
-        <div id="notification-area"></div>
+  <div id="alerts"></div>
 
-        <div class="info-bar">
-            <div>
-                <strong>ID:</strong> <span class="paste-id" id="paste-id">loading...</span>
-            </div>
-            <div>
-                <strong>Created:</strong>
-                <span id="created-date">loading...</span>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="action-buttons">
-                <button class="btn" onclick="downloadText()">Download Text</button>
-                <button class="btn btn-success" onclick="copyToClipboard()">Copy to Clipboard</button>
-                <button class="btn btn-error" onclick="window.location.href='/'">New Paste</button>
-            </div>
-
-            <div class="code-container">
-                <!-- The code will be placed here dynamically -->
-                <pre><code id="codeblock" class="hljs">Loading...</code></pre>
-                <button class="copy-btn" onclick="copyToClipboard()">Copy</button>
-            </div>
-
-            <div class="url-display">
-                <input type="text" id="full-url" value="" readonly />
-                <button class="btn" onclick="copyUrlToClipboard()">Copy URL</button>
-            </div>
-
-            <div style="text-align: center; margin-top: 20px;">
-                <div class="language-indicator">Language: <span id="language-name">Unknown</span></div>
-            </div>
-        </div>
-
-        <footer>
-            <p>Source code available on <a href="https://github.com/codebam/pastebin-r2">GitHub</a></p>
-            <p>This service uses Cloudflare R2 for storage and Hono framework.</p>
-        </footer>
+  <div class="panel">
+    <div class="bar">
+      <span class="id" id="paste-id">…</span>
+      <span class="sep">·</span>
+      <span id="lang">detecting</span>
+      <span class="sep">·</span>
+      <span id="size">…</span>
+      <span class="sep">·</span>
+      <span id="uploaded">…</span>
+      <span class="actions">
+        <button class="btn" id="wrap-btn">wrap</button>
+        <button class="btn" id="download-btn">download</button>
+        <a class="btn" id="raw-link" href="#">raw</a>
+        <button class="btn go" id="copy-btn">copy</button>
+      </span>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Get the paste ID from URL
-            const path = window.location.pathname.split('/');
-            const id = path[path.length - 2];
-            
-            const pasteIdElement = document.getElementById('paste-id');
-            pasteIdElement.textContent = id;
-            
-            // Set current URL in display
-            const fullUrl = window.location.href.split('/').slice(0, -1).join('/') + '/';
-            const fullUrlInput = document.getElementById('full-url');
-            fullUrlInput.value = fullUrl;
-            
-            // Fetch and display the paste content (same-origin, no hardcoded host)
-            fetch('/' + id)
-                .then(response => response.text())
-                .then(text => {
-                    const codeblock = document.getElementById('codeblock');
-                    codeblock.textContent = text;
-                    
-                    // Highlight the code
-                    hljs.highlightAll();
-                    
-                    // Try to determine language from file extension or file content
-                    const languageName = getLanguageName(id);
-                    document.getElementById('language-name').textContent = languageName;
-                })
-                .catch(error => {
-                    const codeblock = document.getElementById('codeblock');
-                    codeblock.textContent = 'Failed to load paste content: ' + error.message;
-                    console.error('Error loading paste:', error);
-                    
-                    // Show error notification
-                    showNotification('Failed to load paste', 'error')
-                });
-                
-            // Set creation date (just for now showing current date)
-            const now = new Date();
-            document.getElementById('created-date').textContent = now.toLocaleString();
-        });
-        
-        function copyTextToClipboard(text, notifyMsg) {
-            const legacy = function (cb) {
-                const ta = document.createElement('textarea');
-                ta.value = text;
-                ta.setAttribute('readonly', '');
-                ta.style.position = 'fixed';
-                ta.style.top = '-1000px';
-                ta.style.opacity = '0';
-                document.body.appendChild(ta);
-                ta.select();
-                ta.setSelectionRange(0, text.length);
-                document.execCommand('copy');
-                document.body.removeChild(ta);
-                cb();
-            };
-            const done = function () { showNotification(notifyMsg, 'success'); };
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(text).then(done).catch(function () {
-                    legacy(done);
-                });
-            } else {
-                legacy(done);
-            }
-        }
+    <div class="viewer" id="viewer">
+      <div class="gutter" id="gutter" aria-hidden="true">1</div>
+      <pre><code id="codeblock" class="hljs">loading…</code></pre>
+    </div>
 
-        function copyToClipboard() {
-            const codeblock = document.getElementById('codeblock');
-            copyTextToClipboard(codeblock.textContent, 'Copied to clipboard');
-        }
+    <div class="urlrow">
+      <input type="text" id="full-url" readonly>
+      <button id="copy-url-btn">copy url</button>
+    </div>
+  </div>
 
-        function copyUrlToClipboard() {
-            const url = document.getElementById('full-url').value;
-            copyTextToClipboard(url, 'URL copied to clipboard');
+  <footer>hono · cloudflare workers · <a href="https://github.com/codebam/pastebin-r2">github.com/codebam/pastebin-r2</a></footer>
+</div>
+
+<div class="toast" id="toast">copied</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var codeblock, gutter, toast, toastTimer, wrapped = false;
+
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 1800);
+  }
+
+  function alertMsg(message, type) {
+    var el = document.createElement('div');
+    el.className = 'alert ' + (type || 'success');
+    el.textContent = message;
+    $('alerts').appendChild(el);
+    setTimeout(function () { el.remove(); }, 5000);
+  }
+
+  function legacyCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.top = '-1000px';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    var ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  function copyText(text) {
+    return new Promise(function (resolve, reject) {
+      var fallback = function () {
+        legacyCopy(text) ? resolve() : reject(new Error('copy blocked'));
+      };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(resolve, fallback);
+      } else {
+        fallback();
+      }
+    });
+  }
+
+  function drawGutter(lineCount) {
+    var out = '';
+    for (var i = 1; i <= lineCount; i++) out += i + '\n';
+    gutter.textContent = out;
+  }
+
+  function formatBytes(n) {
+    if (typeof n !== 'number') return '—';
+    if (n < 1024) return n + ' B';
+    if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+    return (n / 1024 / 1024).toFixed(1) + ' MB';
+  }
+
+  // hljs uses different names than the file extension in some cases; map the
+  // ones we care about and fall back to auto-detection.
+  var EXT_LANG = {
+    js: 'javascript', mjs: 'javascript', cjs: 'javascript', jsx: 'javascript',
+    ts: 'typescript', tsx: 'typescript', py: 'python', rb: 'ruby', rs: 'rust',
+    go: 'go', c: 'c', h: 'c', cpp: 'cpp', hpp: 'cpp', cs: 'csharp', java: 'java',
+    php: 'php', sh: 'bash', bash: 'bash', zsh: 'bash', fish: 'bash',
+    html: 'xml', xml: 'xml', svg: 'xml', css: 'css', scss: 'scss',
+    json: 'json', yml: 'yaml', yaml: 'yaml', toml: 'ini', ini: 'ini',
+    md: 'markdown', sql: 'sql', nix: 'nix', lua: 'lua', diff: 'diff'
+  };
+
+  function render(text, id) {
+    codeblock.textContent = text;
+    drawGutter(text.split('\n').length);
+
+    var ext = id.indexOf('.') > -1 ? id.split('.').pop().toLowerCase() : '';
+    var lang = EXT_LANG[ext];
+    var label = 'plain text';
+
+    if (window.hljs) {
+      try {
+        if (lang && hljs.getLanguage(lang)) {
+          codeblock.innerHTML = hljs.highlight(text, { language: lang }).value;
+          label = lang;
+        } else {
+          var auto = hljs.highlightAuto(text);
+          if (auto.language && auto.relevance > 5) {
+            codeblock.innerHTML = auto.value;
+            label = auto.language;
+          }
         }
-        
-        function downloadText() {
-            const text = document.getElementById('codeblock').textContent;
-            const blob = new Blob([text], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `paste_${new Date().toISOString().slice(0, 10)}.txt`;
-            document.body.appendChild(a);
-            a.click();
-            
-            // Clean up
-            setTimeout(() => {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }, 100);
-        }
-        
-        function getLanguageName(id) {
-            const extensions = [
-                { ext: '.js', name: 'JavaScript' },
-                { ext: '.ts', name: 'TypeScript' },
-                { ext: '.py', name: 'Python' },
-                { ext: '.html', name: 'HTML' },
-                { ext: '.css', name: 'CSS' },
-                { ext: '.json', name: 'JSON' },
-                { ext: '.xml', name: 'XML' },
-                { ext: '.md', name: 'Markdown' },
-                { ext: '.sql', name: 'SQL' },
-                { ext: '.sh', name: 'Shell' }
-            ];
-            
-            const extMatch = extensions.find(ext => id.endsWith(ext.ext));
-            if (extMatch) {
-                return extMatch.name;
-            }
-            
-            // Try to detect from content
-            if (id.includes('.')) {
-                const parts = id.split('.');
-                if (parts.length > 1) {
-                    return parts[parts.length - 1].toUpperCase();
-                }
-            }
-            
-            return 'Plain Text';
-        }
-        
-        function showNotification(message, type = 'success') {
-            const notificationArea = document.getElementById('notification-area');
-            const notificationEl = document.createElement('div');
-            notificationEl.className = `notification ${type}`;
-            notificationEl.textContent = message;
-            
-            notificationArea.appendChild(notificationEl);
-            
-            setTimeout(() => {
-                notificationEl.remove();
-            }, 5000);
-        }
-    </script>
+      } catch (e) {
+        // Leave the plain textContent in place — highlighting is cosmetic.
+      }
+    }
+    $('lang').textContent = label;
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    codeblock = $('codeblock');
+    gutter = $('gutter');
+    toast = $('toast');
+
+    // Path is /:id/highlight
+    var parts = window.location.pathname.split('/').filter(Boolean);
+    var id = parts.length >= 2 ? parts[parts.length - 2] : '';
+
+    $('paste-id').textContent = id || '?';
+    var pasteHref = window.location.origin + '/' + id;
+    $('full-url').value = pasteHref;
+    $('raw-link').href = pasteHref;
+
+    fetch('/' + id)
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.text();
+      })
+      .then(function (text) { render(text, id); })
+      .catch(function (err) {
+        codeblock.textContent = 'failed to load paste: ' + err.message;
+        drawGutter(1);
+        $('lang').textContent = '—';
+        alertMsg('failed to load paste', 'error');
+      });
+
+    // Metadata comes from the worker; a bare id has no extension so strip one
+    // if the URL carried it.
+    fetch('/info/' + id.split('.')[0])
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (info) {
+        if (!info) { $('size').textContent = '—'; $('uploaded').textContent = '—'; return; }
+        $('size').textContent = formatBytes(info.size);
+        $('uploaded').textContent = info.uploaded
+          ? new Date(info.uploaded).toLocaleString()
+          : '—';
+      })
+      .catch(function () {
+        $('size').textContent = '—';
+        $('uploaded').textContent = '—';
+      });
+
+    $('wrap-btn').addEventListener('click', function () {
+      wrapped = !wrapped;
+      codeblock.style.whiteSpace = wrapped ? 'pre-wrap' : 'pre';
+      // Wrapped lines desync the gutter, so hide it while wrapping is on.
+      gutter.style.display = wrapped ? 'none' : '';
+      this.textContent = wrapped ? 'nowrap' : 'wrap';
+    });
+
+    $('copy-btn').addEventListener('click', function () {
+      copyText(codeblock.textContent).then(function () {
+        showToast('paste copied');
+      }, function (err) { alertMsg('failed to copy: ' + err.message, 'error'); });
+    });
+
+    $('copy-url-btn').addEventListener('click', function () {
+      copyText($('full-url').value).then(function () {
+        showToast('url copied');
+      }, function (err) { alertMsg('failed to copy: ' + err.message, 'error'); });
+    });
+
+    $('download-btn').addEventListener('click', function () {
+      var blob = new Blob([codeblock.textContent], { type: 'text/plain' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = id.indexOf('.') > -1 ? id : id + '.txt';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    });
+  });
+})();
+</script>
 </body>
 </html>

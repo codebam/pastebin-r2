@@ -1,563 +1,346 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sean's Pastebin</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
-    <style>
-        :root {
-            --primary-color: #4361ee;
-            --secondary-color: #3a0ca3;
-            --background-color: #f8f9fa;
-            --text-color: #212529;
-            --border-color: #dee2e6;
-            --success-color: #2ecc71;
-            --error-color: #e74c3c;
-            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sean's Pastebin</title>
+<meta name="description" content="Text in, short link out. Stored on Cloudflare R2.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>▤</text></svg>">
+<style>
+:root{
+  --bg:#0b0d10; --panel:#111418; --panel-2:#161a1f; --line:#232931;
+  --fg:#d7dee6; --muted:#7e8894; --dim:#59626e;
+  --accent:#5ee6a8; --accent-dim:rgba(94,230,168,.12);
+  --amber:#e8b757; --red:#f0736a;
+  --mono:ui-monospace,"SF Mono","JetBrains Mono","Fira Code",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#f4f6f4; --panel:#ffffff; --panel-2:#eef1ee; --line:#d8ded8;
+    --fg:#12171c; --muted:#5b6570; --dim:#8b939c;
+    --accent:#0f8d5c; --accent-dim:rgba(15,141,92,.09);
+    --amber:#9a6f14; --red:#c93a31;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--mono);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:820px;margin:0 auto;padding:0 16px 60px}
 
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --background-color: #121212;
-                --text-color: #f8f9fa;
-                --border-color: #343a40;
-            }
-        }
+.top{display:flex;align-items:baseline;gap:10px;padding:34px 0 20px;border-bottom:1px solid var(--line);margin-bottom:24px}
+.top .prompt{color:var(--accent)}
+.top h1{font-size:15px;font-weight:600;margin:0;letter-spacing:.01em}
+.top .cursor{width:8px;height:15px;background:var(--accent);display:inline-block;animation:blink 1.1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+@media (prefers-reduced-motion: reduce){.top .cursor{animation:none}}
+.top .meta{margin-left:auto;color:var(--dim);font-size:12px}
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: var(--background-color);
-            color: var(--text-color);
-            line-height: 1.6;
-        }
+.panel{border:1px solid var(--line);background:var(--panel)}
+.panel + .panel{margin-top:20px}
+.bar{display:flex;align-items:center;gap:12px;padding:8px 12px;background:var(--panel-2);border-bottom:1px solid var(--line);font-size:12px;color:var(--muted)}
+.bar .tag{color:var(--accent)}
+.bar .right{margin-left:auto;color:var(--dim)}
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
+.editor{display:flex;position:relative}
+.gutter{flex:0 0 auto;padding:12px 10px;text-align:right;color:var(--dim);font-size:13px;line-height:1.6;
+  user-select:none;border-right:1px solid var(--line);background:var(--panel-2);overflow:hidden;white-space:pre}
+#paste-text{
+  flex:1 1 auto;min-width:0;display:block;padding:12px 14px;border:0;outline:0;resize:vertical;
+  background:transparent;color:var(--fg);font-family:var(--mono);font-size:13px;line-height:1.6;
+  min-height:230px;white-space:pre;overflow-x:auto;tab-size:4}
+#paste-text::placeholder{color:var(--dim)}
 
-        header {
-            text-align: center;
-            padding: 20px 0;
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 30px;
-        }
+.drop{position:absolute;inset:6px;display:none;place-items:center;border:1px dashed var(--accent);
+  background:var(--accent-dim);color:var(--accent);font-size:13px;pointer-events:none}
+.editor.dragging .drop{display:grid}
 
-        h1 {
-            color: var(--primary-color);
-            margin-bottom: 10px;
-        }
+.foot{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 12px;border-top:1px solid var(--line);background:var(--panel-2)}
+.btn{font-family:inherit;font-size:12.5px;padding:6px 12px;border:1px solid var(--line);background:var(--panel);color:var(--muted);cursor:pointer;transition:.12s}
+.btn:hover{color:var(--fg);border-color:var(--dim)}
+.btn:focus-visible{outline:1px solid var(--accent);outline-offset:2px}
+.btn.go{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);font-weight:600}
+.btn.go:hover{color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.sp{flex:1}
+.hint{color:var(--dim);font-size:12px}
 
-        .app-description {
-            font-size: 1.1em;
-            color: #666;
-            margin-bottom: 20px;
-        }
+#alerts{display:grid;gap:8px;margin-bottom:16px}
+#alerts:empty{margin-bottom:0}
+.alert{padding:8px 12px;font-size:12.5px;border:1px solid}
+.alert.success{color:var(--accent);border-color:var(--accent);background:var(--accent-dim)}
+.alert.warning{color:var(--amber);border-color:var(--amber);background:rgba(232,183,87,.1)}
+.alert.error{color:var(--red);border-color:var(--red);background:rgba(240,115,106,.1)}
 
-        .card {
-            background-color: white;
-            border-radius: 8px;
-            padding: 25px;
-            box-shadow: var(--card-shadow);
-            margin-bottom: 25px;
-        }
+.out{border:1px solid var(--accent);background:var(--accent-dim);margin-top:20px;padding:12px}
+.out[hidden]{display:none}
+.out .ln{color:var(--accent);font-size:12px;margin-bottom:8px}
+.urlrow{display:flex;border:1px solid var(--line);background:var(--panel)}
+.urlrow input{flex:1;min-width:0;border:0;background:transparent;color:var(--fg);font-family:inherit;font-size:13px;padding:9px 11px;outline:0}
+.urlrow button{border:0;border-left:1px solid var(--line);background:var(--panel-2);color:var(--accent);font-family:inherit;font-size:12.5px;padding:9px 14px;cursor:pointer}
+.urlrow button:hover{background:var(--line)}
+.links{margin-top:10px;font-size:12px;color:var(--dim)}
+.links a{color:var(--muted);text-decoration:none;border-bottom:1px dotted var(--dim);margin-right:14px}
+.links a:hover{color:var(--fg);border-bottom-color:var(--fg)}
 
-        @media (prefers-color-scheme: dark) {
-            .card {
-                background-color: #1e1e1e;
-            }
-        }
+.curl{padding:12px 14px;color:var(--muted);font-size:12.5px;overflow-x:auto;white-space:pre;margin:0}
+.curl .p{color:var(--accent)}
 
-        textarea {
-            width: 100%;
-            min-height: 200px;
-            padding: 15px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            font-family: monospace;
-            resize: vertical;
-            background-color: white;
-            color: var(--text-color);
-            box-sizing: border-box; /* This ensures padding doesn't increase the width */
-        }
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,14px);padding:8px 16px;
+  border:1px solid var(--accent);background:var(--panel);color:var(--accent);font-size:12.5px;
+  opacity:0;pointer-events:none;transition:.18s;z-index:50}
+.toast.show{opacity:1;transform:translate(-50%,0)}
 
-        @media (prefers-color-scheme: dark) {
-            textarea {
-                background-color: #2d2d2d;
-                border-color: #444;
-            }
-        }
+footer{margin-top:28px;color:var(--dim);font-size:12px}
+footer a{color:var(--muted)}
 
-        .btn {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
-            margin: 5px;
-        }
-
-        .btn:hover {
-            background-color: var(--secondary-color);
-        }
-
-        .btn-success {
-            background-color: var(--success-color);
-        }
-
-        .btn-success:hover {
-            background-color: #27ae60;
-        }
-
-        .btn-error {
-            background-color: var(--error-color);
-        }
-
-        .btn-error:hover {
-            background-color: #c0392b;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-
-        .upload-container {
-            border: 2px dashed var(--border-color);
-            border-radius: 8px;
-            padding: 30px;
-            text-align: center;
-            margin: 20px 0;
-            transition: all 0.3s;
-        }
-
-        .upload-container:hover {
-            border-color: var(--primary-color);
-            background-color: rgba(67, 97, 238, 0.05);
-        }
-
-        .upload-icon {
-            font-size: 48px;
-            opacity: 0.5;
-            margin-bottom: 10px;
-        }
-
-        .clipboard-notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            border-radius: 6px;
-            background-color: var(--success-color);
-            color: white;
-            opacity: 0;
-            transform: translateY(-20px);
-            transition: all 0.3s;
-        }
-
-        .clipboard-notification.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        footer {
-            text-align: center;
-            padding: 20px;
-            border-top: 1px solid var(--border-color);
-            margin-top: 30px;
-            font-size: 0.9em;
-            color: #666;
-        }
-
-        .clipboard-section {
-            display: flex;
-            align-items: stretch;
-        }
-
-        .clipboard-section > div {
-            flex: 1;
-        }
-
-        .url-display {
-            position: relative;
-            display: flex;
-            align-items: center;
-            margin-top: 15px;
-        }
-
-        .url-display input {
-            flex: 1 1 auto;
-            min-width: 0;
-            width: 0;
-            padding: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px 0 0 6px;
-            background-color: white;
-            color: var(--text-color);
-            box-sizing: border-box;
-        }
-
-        @media (prefers-color-scheme: dark) {
-            .url-display input {
-                background-color: #2d2d2d;
-                border-color: #444;
-            }
-        }
-
-        .copy-button {
-            flex: 0 0 auto;
-            position: relative;
-            height: 100%;
-            padding: 8px 12px;
-            white-space: nowrap;
-            background-color: var(--secondary-color);
-            color: white;
-            border: none;
-            border-radius: 0 6px 6px 0;
-            cursor: pointer;
-        }
-
-        .paste-controls {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .action-button-group {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
-
-        .notification {
-            padding: 15px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .notification.success {
-            background-color: rgba(46, 204, 113, 0.1);
-            color: #27ae60;
-            border: 1px solid #27ae60;
-        }
-
-        .notification.error {
-            background-color: rgba(231, 76, 60, 0.1);
-            color: #e74c3c;
-            border: 1px solid #e74c3c;
-        }
-
-        .notification.warning {
-            background-color: rgba(241, 196, 15, 0.1);
-            color: #f1c40f;
-            border: 1px solid #f1c40f;
-        }
-    </style>
+@media (max-width:560px){
+  .top{padding-top:26px}
+  .foot .hint{display:none}
+  .btn{flex:1 1 auto;text-align:center}
+  .sp{display:none}
+}
+</style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Sean's Pastebin</h1>
-            <p class="app-description">Share text snippets securely and easily</p>
-        </header>
+<div class="wrap">
+  <div class="top">
+    <span class="prompt">~$</span>
+    <h1>pastebin</h1>
+    <span class="cursor"></span>
+    <span class="meta">r2 · edge</span>
+  </div>
 
-        <div class="card">
-            <div id="notification-area"></div>
-            
-            <div class="form-group">
-                <label for="paste-text">Paste your text here:</label>
-                <textarea id="paste-text" placeholder="Enter or paste your content here..."></textarea>
-            </div>
+  <div id="alerts"></div>
 
-            <div class="upload-container" id="drop-zone">
-                <div class="upload-icon">📁</div>
-                <p>Drag and drop a file here<br>or</p>
-                <input type="file" id="file-upload" style="display: none;" />
-                <button class="btn" onclick="document.getElementById('file-upload').click()">
-                    Select File
-                </button>
-            </div>
-
-            <div class="action-button-group">
-                <button class="btn" id="submit-btn">Submit</button>
-                <button class="btn btn-success" id="copy-to-clipboard-btn">Copy to Clipboard</button>
-                <button class="btn btn-error" id="clear-btn">Clear</button>
-            </div>
-
-            <div id="result-container" style="display: none; margin-top: 20px;">
-                <div class="notification success" id="result-text">
-                    Your paste is ready!
-                </div>
-                
-                <div class="url-display">
-                    <input type="text" id="paste-url" readonly />
-                    <button class="copy-button" onclick="copyToClipboard()">Copy</button>
-                </div>
-            </div>
-
-            <div class="clipboard-section">
-                <div>
-                    <p><strong>Recent Paste:</strong></p>
-                    <textarea id="recent-paste" placeholder="(Paste any text here)" rows="4"></textarea>
-                    <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px;">
-                        <button class="btn" onclick="pasteFromClipboard()">Paste from Clipboard</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <footer>
-            <p>Source code available on <a href="https://github.com/codebam/pastebin-r2">GitHub</a></p>
-            <p>This service uses Cloudflare R2 for storage and Hono framework.</p>
-        </footer>
+  <div class="panel">
+    <div class="bar"><span class="tag">●</span> buffer <span class="right" id="counter">0 B · 1 line</span></div>
+    <div class="editor" id="drop-zone">
+      <div class="gutter" id="gutter" aria-hidden="true">1</div>
+      <textarea id="paste-text" spellcheck="false" wrap="off"
+        placeholder="type here, or drop a file on this box…"></textarea>
+      <div class="drop">drop file to load</div>
     </div>
-
-    <div class="clipboard-notification" id="notification">
-        URL copied to clipboard!
+    <div class="foot">
+      <input type="file" id="file-upload" hidden>
+      <button class="btn" id="file-btn">attach</button>
+      <button class="btn" id="clip-btn">from clipboard</button>
+      <span class="sp"></span>
+      <span class="hint">^⏎</span>
+      <button class="btn" id="clear-btn">clear</button>
+      <button class="btn go" id="submit-btn">create paste</button>
     </div>
+  </div>
 
-    <script>
-        // Global helper used by the inline onclick="copyToClipboard()" URL button.
-        // Defined here (global scope) so the inline handler can resolve it.
-        function legacyCopyInline(text, done) {
-            const ta = document.createElement('textarea');
-            ta.value = text;
-            ta.setAttribute('readonly', '');
-            ta.style.position = 'fixed';
-            ta.style.top = '-1000px';
-            ta.style.opacity = '0';
-            document.body.appendChild(ta);
-            ta.select();
-            ta.setSelectionRange(0, text.length);
-            document.execCommand('copy');
-            document.body.removeChild(ta);
-            done();
-        }
+  <div class="out" id="result" hidden>
+    <div class="ln">✓ created</div>
+    <div class="urlrow">
+      <input type="text" id="paste-url" readonly>
+      <button id="copy-url-btn">copy</button>
+    </div>
+    <div class="links">
+      <a id="link-raw" href="#" target="_blank" rel="noopener">raw</a>
+      <a id="link-highlight" href="#" target="_blank" rel="noopener">highlighted</a>
+    </div>
+  </div>
 
-        function copyToClipboard() {
-            const el = document.getElementById('paste-url');
-            if (el && el.value) {
-                const text = el.value;
-                const notify = document.getElementById('notification');
-                const done = function () {
-                    notify.classList.add('show');
-                    setTimeout(function () { notify.classList.remove('show'); }, 2000);
-                };
-                if (navigator.clipboard && window.isSecureContext) {
-                    navigator.clipboard.writeText(text).then(done).catch(function () {
-                        legacyCopyInline(text, done);
-                    });
-                } else {
-                    legacyCopyInline(text, done);
-                }
-            }
-        }
+  <div class="panel">
+    <div class="bar">cli</div>
+<pre class="curl"><span class="p">$</span> curl -T file.txt <span class="host">https://example.com</span>
+<span class="p">$</span> pbpaste | curl --data-binary @- <span class="host">https://example.com</span></pre>
+  </div>
 
-        document.addEventListener('DOMContentLoaded', function() {
-            // Robust copy-to-clipboard that works even when the Clipboard API is
-            // blocked (unfocused tab / denied permission). Falls back to a hidden
-            // textarea + execCommand('copy').
-            function copyTextToClipboard(text) {
-                return new Promise(function (resolve, reject) {
-                    if (navigator.clipboard && window.isSecureContext) {
-                        navigator.clipboard.writeText(text).then(resolve).catch(function () {
-                            legacyCopy(text, resolve, reject);
-                        });
-                    } else {
-                        legacyCopy(text, resolve, reject);
-                    }
-                });
-            }
+  <footer>hono · cloudflare workers · <a href="https://github.com/codebam/pastebin-r2">github.com/codebam/pastebin-r2</a></footer>
+</div>
 
-            function legacyCopy(text, resolve, reject) {
-                try {
-                    const ta = document.createElement('textarea');
-                    ta.value = text;
-                    ta.setAttribute('readonly', '');
-                    ta.style.position = 'fixed';
-                    ta.style.top = '-1000px';
-                    ta.style.opacity = '0';
-                    document.body.appendChild(ta);
-                    ta.select();
-                    ta.setSelectionRange(0, text.length);
-                    const ok = document.execCommand('copy');
-                    document.body.removeChild(ta);
-                    ok ? resolve() : reject(new Error('execCommand copy failed'));
-                } catch (e) {
-                    reject(e);
-                }
-            }
-            const pasteText = document.getElementById('paste-text');
-            const fileUpload = document.getElementById('file-upload');
-            const submitBtn = document.getElementById('submit-btn');
-            const clearBtn = document.getElementById('clear-btn');
-            const copyToClipboardBtn = document.getElementById('copy-to-clipboard-btn');
-            const resultContainer = document.getElementById('result-container');
-            const resultText = document.getElementById('result-text');
-            const pasteUrl = document.getElementById('paste-url');
-            const notification = document.getElementById('notification');
-            const dropZone = document.getElementById('drop-zone');
-            const recentPaste = document.getElementById('recent-paste');
+<div class="toast" id="toast">copied</div>
 
-            // Handle drag and drop
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                dropZone.addEventListener(eventName, preventDefaults, false);
-            });
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var pasteText, gutter, counter, result, pasteUrl, submitBtn, dropZone, toast, fileUpload;
+  var toastTimer;
 
-            function preventDefaults(e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 1800);
+  }
 
-            ['dragenter', 'dragover'].forEach(eventName => {
-                dropZone.addEventListener(eventName, highlight, false);
-            });
+  function alertMsg(message, type) {
+    var el = document.createElement('div');
+    el.className = 'alert ' + (type || 'success');
+    el.textContent = message;
+    $('alerts').appendChild(el);
+    setTimeout(function () { el.remove(); }, 5000);
+  }
 
-            ['dragleave', 'drop'].forEach(eventName => {
-                dropZone.addEventListener(eventName, unhighlight, false);
-            });
+  // Copy that still works when the Clipboard API is unavailable (insecure
+  // context, denied permission, unfocused document).
+  function legacyCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.top = '-1000px';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    var ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  }
 
-            function highlight() {
-                dropZone.style.borderColor = '#4361ee';
-                dropZone.style.backgroundColor = 'rgba(67, 97, 238, 0.1)';
-            }
+  function copyText(text) {
+    return new Promise(function (resolve, reject) {
+      var fallback = function () {
+        legacyCopy(text) ? resolve() : reject(new Error('copy blocked'));
+      };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(resolve, fallback);
+      } else {
+        fallback();
+      }
+    });
+  }
 
-            function unhighlight() {
-                dropZone.style.borderColor = '#dee2e6';
-                dropZone.style.backgroundColor = '';
-            }
+  // Line numbers are only correct because the textarea has wrap="off" — a
+  // wrapped line would occupy more rows than the gutter draws.
+  function syncGutter() {
+    var lines = pasteText.value.split('\n').length;
+    var out = '';
+    for (var i = 1; i <= lines; i++) out += i + '\n';
+    gutter.textContent = out;
+    gutter.scrollTop = pasteText.scrollTop;
+  }
 
-            dropZone.addEventListener('drop', handleDrop, false);
+  function updateCounter() {
+    var bytes = new TextEncoder().encode(pasteText.value).length;
+    var lines = pasteText.value.split('\n').length;
+    counter.textContent = bytes.toLocaleString() + ' B · ' + lines + (lines === 1 ? ' line' : ' lines');
+  }
 
-            function handleDrop(e) {
-                const dt = e.dataTransfer;
-                const files = dt.files;
-                if (files.length > 0) {
-                    const file = files[0];
-                    readTextFromFile(file);
-                }
-            }
+  function onInput() { syncGutter(); updateCounter(); }
 
-            // Handle file selection
-            fileUpload.addEventListener('change', function(e) {
-                if (this.files && this.files[0]) {
-                    const file = this.files[0];
-                    readTextFromFile(file);
-                }
-            });
+  function readFile(file) {
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      pasteText.value = e.target.result;
+      onInput();
+      alertMsg('loaded ' + file.name, 'success');
+    };
+    reader.onerror = function () { alertMsg('could not read ' + file.name, 'error'); };
+    reader.readAsText(file);
+  }
 
-            function readTextFromFile(file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    pasteText.value = e.target.result;
-                };
-                reader.readAsText(file);
-            }
+  function showResult(url) {
+    url = String(url).trim();
+    pasteUrl.value = url;
+    $('link-raw').href = url;
+    $('link-highlight').href = url + '/highlight';
+    result.hidden = false;
+    result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 
-            // Submit functionality
-            submitBtn.addEventListener('click', async function() {
-                const text = pasteText.value.trim();
-                
-                if (!text) {
-                    showNotification('Please enter some content to paste', 'error');
-                    return;
-                }
+  async function submit() {
+    if (!pasteText.value.trim()) {
+      alertMsg('nothing to paste yet', 'warning');
+      pasteText.focus();
+      return;
+    }
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'creating…';
+    try {
+      // Same-origin, so the worker echoes back a URL on whatever host the
+      // user is actually visiting.
+      var response = await fetch('/', { method: 'POST', body: pasteText.value });
+      if (response.ok) {
+        showResult(await response.text());
+      } else {
+        alertMsg('failed: HTTP ' + response.status, 'error');
+      }
+    } catch (err) {
+      alertMsg('error: ' + err.message, 'error');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'create paste';
+    }
+  }
 
-                try {
-                    // Use same-origin so the worker returns a URL on the domain
-                    // the user is actually visiting (no hardcoded hostname).
-                    const response = await fetch('/', {
-                        method: 'POST',
-                        body: text
-                    });
+  document.addEventListener('DOMContentLoaded', function () {
+    pasteText = $('paste-text');
+    gutter = $('gutter');
+    counter = $('counter');
+    result = $('result');
+    pasteUrl = $('paste-url');
+    submitBtn = $('submit-btn');
+    dropZone = $('drop-zone');
+    toast = $('toast');
+    fileUpload = $('file-upload');
 
-                    if (response.ok) {
-                        const url = await response.text();
-                        showResult(url);
-                    } else {
-                        showNotification('Failed to submit paste: ' + response.status, 'error');
-                    }
-                } catch (error) {
-                    showNotification('Error submitting paste: ' + error.message, 'error');
-                }
-            });
+    Array.prototype.forEach.call(document.querySelectorAll('.host'), function (el) {
+      el.textContent = window.location.origin;
+    });
 
-            // Copy to clipboard functionality
-            copyToClipboardBtn.addEventListener('click', function() {
-                const text = pasteText.value.trim();
-                if (!text) {
-                    showNotification('Nothing to copy to clipboard', 'warning');
-                    return;
-                }
+    onInput();
+    pasteText.addEventListener('input', onInput);
+    pasteText.addEventListener('scroll', function () { gutter.scrollTop = pasteText.scrollTop; });
 
-                copyTextToClipboard(text).then(() => {
-                    showNotification('Copied to clipboard!');
-                }).catch(err => {
-                    showNotification('Failed to copy: ' + err, 'error');
-                });
-            });
+    $('file-btn').addEventListener('click', function () { fileUpload.click(); });
+    fileUpload.addEventListener('change', function () {
+      if (this.files && this.files[0]) readFile(this.files[0]);
+    });
 
-            // Clear functionality
-            clearBtn.addEventListener('click', function() {
-                pasteText.value = '';
-                resultContainer.style.display = 'none';
-                recentPaste.value = '';
-                showNotification('Cleared!', 'success');
-            });
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(function (ev) {
+      dropZone.addEventListener(ev, function (e) { e.preventDefault(); e.stopPropagation(); });
+    });
+    ['dragenter', 'dragover'].forEach(function (ev) {
+      dropZone.addEventListener(ev, function () { dropZone.classList.add('dragging'); });
+    });
+    ['dragleave', 'drop'].forEach(function (ev) {
+      dropZone.addEventListener(ev, function () { dropZone.classList.remove('dragging'); });
+    });
+    dropZone.addEventListener('drop', function (e) {
+      var files = e.dataTransfer && e.dataTransfer.files;
+      if (files && files.length) readFile(files[0]);
+    });
 
-            // Paste from clipboard button
-            function pasteFromClipboard() {
-                navigator.clipboard.readText().then(text => {
-                    recentPaste.value = text;
-                }).catch(err => {
-                    showNotification('Failed to read clipboard: ' + err, 'error');
-                });
-            }
+    submitBtn.addEventListener('click', submit);
+    document.addEventListener('keydown', function (e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); submit(); }
+    });
 
-            // Show results
-            function showResult(url) {
-                resultContainer.style.display = '';
-                pasteUrl.value = url;
-                showNotification('Paste created successfully!', 'success');
-            }
+    $('clear-btn').addEventListener('click', function () {
+      pasteText.value = '';
+      onInput();
+      result.hidden = true;
+      pasteText.focus();
+    });
 
-            // Show notifications
-            function showNotification(message, type = 'success') {
-                const notificationArea = document.getElementById('notification-area');
-                const notificationEl = document.createElement('div');
-                notificationEl.className = `notification ${type}`;
-                notificationEl.textContent = message;
-                
-                notificationArea.appendChild(notificationEl);
-                
-                setTimeout(() => {
-                    notificationEl.remove();
-                }, 5000);
-            }
+    $('clip-btn').addEventListener('click', function () {
+      if (!navigator.clipboard || !navigator.clipboard.readText) {
+        alertMsg('clipboard read unavailable in this browser', 'warning');
+        return;
+      }
+      navigator.clipboard.readText().then(function (text) {
+        if (!text) { alertMsg('clipboard is empty', 'warning'); return; }
+        pasteText.value = text;
+        onInput();
+      }, function () {
+        alertMsg('clipboard permission denied', 'warning');
+      });
+    });
 
-            // Load initial paste content from clipboard if available
-            navigator.clipboard.readText().then(text => {
-                if (text) {
-                    recentPaste.value = text;
-                }
-            });
-        });
-    </script>
+    $('copy-url-btn').addEventListener('click', function () {
+      if (!pasteUrl.value) return;
+      copyText(pasteUrl.value).then(function () {
+        showToast('url copied');
+      }, function (err) {
+        alertMsg('failed to copy: ' + err.message, 'error');
+      });
+    });
+  });
+})();
+</script>
 </body>
 </html>
