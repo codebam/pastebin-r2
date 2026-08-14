@@ -175,3 +175,6 @@ dist
 
 .direnv/
 dist/
+
+# worktrees
+.worktrees/
