@@ -11,6 +11,7 @@ It supports storing text content in R2 bucket storage with API endpoints for cre
 - Delete paste functionality
 - List all pastes
 - Paste information endpoint
+- Automatic expiry (48 hours by default, configurable per paste)
 - Web UI for easy access
 
 ## Building & Running
@@ -56,13 +57,29 @@ nix build .#packages.default
 - `package.json` - Dependencies and scripts
 - `tsconfig.json` - TypeScript configuration
 
+## Expiry
+
+Pastes expire automatically. The lifetime is stamped into the object's custom
+metadata when it is written, enforced on every read, and an hourly cron trigger
+(`[triggers]` in `wrangler.toml`) sweeps expired objects out of the bucket.
+
+The default and the maximum are both **48 hours**. A shorter lifetime can be
+requested with the `ttl` query parameter (or the `X-Expires-In` header) on
+create/update, as plain seconds or with an `s`/`m`/`h`/`d` suffix. Values above
+48 hours are clamped down, and the minimum is 60 seconds.
+
+```bash
+curl --data-binary @- 'https://example.com/?ttl=2h' < file.txt
+curl -H 'X-Expires-In: 900' --data-binary @- https://example.com < file.txt
+```
+
 ## API Endpoints
 
-- `POST /` - Create new paste, returns URL with ID
+- `POST /` - Create new paste, returns URL with ID (`?ttl=` sets lifetime)
 - `GET /:id` - Retrieve paste by ID  
-- `POST /:id` - Update paste content
+- `POST /:id` - Update paste content (`?ttl=` sets lifetime)
 - `DELETE /:id` - Delete paste
 - `GET /list` - List all paste IDs
-- `GET /info/:id` - Get metadata about paste
+- `GET /info/:id` - Get metadata about paste, including its `expires` time
 - `GET /:id/highlight` - View with syntax highlighting
 - `GET /text/:id` - Get text content

@@ -60,6 +60,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--mono);font-
 .btn.go{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);font-weight:600}
 .btn.go:hover{color:var(--accent)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
+select.btn{appearance:none;padding-right:22px;background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50%),linear-gradient(135deg,var(--dim) 50%,transparent 50%);background-position:calc(100% - 13px) 12px,calc(100% - 8px) 12px;background-size:5px 5px;background-repeat:no-repeat}
 .sp{flex:1}
 .hint{color:var(--dim);font-size:12px}
 
@@ -124,6 +125,13 @@ footer a{color:var(--muted)}
       <button class="btn" id="file-btn">attach</button>
       <button class="btn" id="clip-btn">from clipboard</button>
       <span class="sp"></span>
+      <label class="hint" for="ttl-select">expires</label>
+      <select class="btn" id="ttl-select">
+        <option value="1h">1 hour</option>
+        <option value="6h">6 hours</option>
+        <option value="24h">24 hours</option>
+        <option value="48h" selected>48 hours</option>
+      </select>
       <span class="hint">^⏎</span>
       <button class="btn" id="clear-btn">clear</button>
       <button class="btn go" id="submit-btn">create paste</button>
@@ -253,7 +261,8 @@ footer a{color:var(--muted)}
     try {
       // Same-origin, so the worker echoes back a URL on whatever host the
       // user is actually visiting.
-      var response = await fetch('/', { method: 'POST', body: pasteText.value });
+      var ttl = $('ttl-select').value;
+      var response = await fetch('/?ttl=' + encodeURIComponent(ttl), { method: 'POST', body: pasteText.value });
       if (response.ok) {
         showResult(await response.text());
       } else {
