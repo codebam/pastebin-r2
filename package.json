@@ -19,12 +19,12 @@
   "author": "Sean Beahan",
   "license": "MIT",
   "dependencies": {
-    "hono": "^4.12.15"
+    "hono": "^4.13.5"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260426.1",
+    "@cloudflare/workers-types": "^5.20260827.1",
     "esbuild-plugin-inline-import": "^1.1.0",
     "typescript": "^6.0.3",
-    "wrangler": "^4.85.0"
+    "wrangler": "^4.127.0"
   }
 }
