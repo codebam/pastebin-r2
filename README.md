@@ -3,6 +3,10 @@
 This is a simple pastebin service implemented as a Cloudflare Worker using Hono framework.
 It supports storing text content in R2 bucket storage with API endpoints for creating, retrieving and managing pastes.
 
+<p align="center">
+  <img src="docs/mockup.webp" width="960" alt="Pastebin R2 editor and command-line usage" />
+</p>
+
 ## Features
 
 - Upload paste snippets (text files)
