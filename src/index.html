@@ -132,6 +132,11 @@ footer a{color:var(--muted)}
         <option value="24h">24 hours</option>
         <option value="48h" selected>48 hours</option>
       </select>
+      <label class="hint" for="encrypt-select">encrypt</label>
+      <select class="btn" id="encrypt-select" title="ChaCha20-Poly1305, done in your browser">
+        <option value="off" selected>off</option>
+        <option value="on">on</option>
+      </select>
       <span class="hint">^⏎</span>
       <button class="btn" id="clear-btn">clear</button>
       <button class="btn go" id="submit-btn">create paste</button>
@@ -139,7 +144,7 @@ footer a{color:var(--muted)}
   </div>
 
   <div class="out" id="result" hidden>
-    <div class="ln">✓ created</div>
+    <div class="ln" id="result-line">✓ created</div>
     <div class="urlrow">
       <input type="text" id="paste-url" readonly>
       <button id="copy-url-btn">copy</button>
@@ -148,6 +153,9 @@ footer a{color:var(--muted)}
       <a id="link-raw" href="#" target="_blank" rel="noopener">raw</a>
       <a id="link-highlight" href="#" target="_blank" rel="noopener">highlighted</a>
     </div>
+    <p class="hint" id="encrypt-warning" hidden style="margin:10px 0 0;color:var(--amber)">
+      encrypted — the key is after the # and never sent to the server. anyone with this URL can read it; save it, it cannot be recovered.
+    </p>
   </div>
 
   <div class="panel">
@@ -161,10 +169,11 @@ footer a{color:var(--muted)}
 
 <div class="toast" id="toast">copied</div>
 
+<script src="/crypto.js"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
-  var pasteText, gutter, counter, result, pasteUrl, submitBtn, dropZone, toast, fileUpload;
+  var pasteText, gutter, counter, result, pasteUrl, submitBtn, dropZone, toast, fileUpload, encryptSelect;
   var toastTimer;
 
   function showToast(msg) {
@@ -241,11 +250,28 @@ footer a{color:var(--muted)}
     reader.readAsText(file);
   }
 
-  function showResult(url) {
-    url = String(url).trim();
-    pasteUrl.value = url;
-    $('link-raw').href = url;
-    $('link-highlight').href = url + '/highlight';
+  function showResult(url, options) {
+    options = options || {};
+    var serverUrl = String(url).trim();
+    var viewUrl = serverUrl;
+    if (options.encrypted && options.key) viewUrl += '#k=' + options.key;
+    var rawUrl = serverUrl;
+    // Encrypted creates return the /view/<id> URL; the raw bytes live at /<id>.
+    if (options.encrypted) {
+      try {
+        var parsed = new URL(serverUrl);
+        rawUrl = parsed.origin + '/' + parsed.pathname.split('/').filter(Boolean).slice(-1)[0];
+      } catch (e) {
+        rawUrl = serverUrl;
+      }
+    }
+    pasteUrl.value = viewUrl;
+    $('link-raw').href = rawUrl;
+    $('link-raw').textContent = options.encrypted ? 'raw ciphertext' : 'raw';
+    $('link-highlight').href = options.encrypted ? viewUrl : viewUrl + '/highlight';
+    $('link-highlight').textContent = options.encrypted ? 'open' : 'highlighted';
+    $('result-line').textContent = options.encrypted ? '✓ created — encrypted' : '✓ created';
+    $('encrypt-warning').hidden = !options.encrypted;
     result.hidden = false;
     result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
@@ -262,9 +288,20 @@ footer a{color:var(--muted)}
       // Same-origin, so the worker echoes back a URL on whatever host the
       // user is actually visiting.
       var ttl = $('ttl-select').value;
-      var response = await fetch('/?ttl=' + encodeURIComponent(ttl), { method: 'POST', body: pasteText.value });
+      var encrypt = encryptSelect.value === 'on';
+      var query = '/?ttl=' + encodeURIComponent(ttl);
+      var body = pasteText.value;
+      var keyB64 = null;
+      if (encrypt) {
+        if (!window.PasteCrypt) throw new Error('crypto library failed to load — reload the page');
+        var sealed = window.PasteCrypt.encrypt(new TextEncoder().encode(pasteText.value));
+        body = sealed.container;
+        keyB64 = window.PasteCrypt.keyToB64url(sealed.key);
+        query += '&enc=1';
+      }
+      var response = await fetch(query, { method: 'POST', body: body });
       if (response.ok) {
-        showResult(await response.text());
+        showResult(await response.text(), { encrypted: encrypt, key: keyB64 });
       } else {
         alertMsg('failed: HTTP ' + response.status, 'error');
       }
@@ -286,6 +323,7 @@ footer a{color:var(--muted)}
     dropZone = $('drop-zone');
     toast = $('toast');
     fileUpload = $('file-upload');
+    encryptSelect = $('encrypt-select');
 
     Array.prototype.forEach.call(document.querySelectorAll('.host'), function (el) {
       el.textContent = window.location.origin;

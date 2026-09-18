@@ -16,5 +16,6 @@
 		"declaration": true,
 		"outDir": "dist",
 		"rootDir": "src"
-	}
+	},
+	"exclude": ["src/crypto.client.mjs"]
 }

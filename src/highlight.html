@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
 <title>paste · Sean's Pastebin</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>▤</text></svg>">
 <link rel="stylesheet" media="(prefers-color-scheme: dark)"
@@ -117,11 +118,25 @@ footer a{color:var(--muted)}
     </div>
   </div>
 
+  <div class="panel" id="unlock" hidden>
+    <div class="bar">🔒 encrypted paste</div>
+    <div style="padding:12px 14px">
+      <p class="hint" style="margin:0 0 8px">
+        paste the key from after the # in the link, or paste the full link:
+      </p>
+      <div class="urlrow" style="border:1px solid var(--line)">
+        <input type="text" id="key-input" placeholder="k=..." autocomplete="off" spellcheck="false">
+        <button id="unlock-btn" class="btn go">unlock</button>
+      </div>
+    </div>
+  </div>
+
   <footer>hono · cloudflare workers · <a href="https://github.com/codebam/pastebin-r2">github.com/codebam/pastebin-r2</a></footer>
 </div>
 
 <div class="toast" id="toast">copied</div>
 
+<script src="/crypto.js"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -227,43 +242,130 @@ footer a{color:var(--muted)}
     gutter = $('gutter');
     toast = $('toast');
 
-    // Path is /:id/highlight
+    // Paths are /view/:id or /:id/highlight.
     var parts = window.location.pathname.split('/').filter(Boolean);
-    var id = parts.length >= 2 ? parts[parts.length - 2] : '';
+    var id = parts[0] === 'view' ? (parts[1] || '') : (parts.length >= 2 ? parts[parts.length - 2] : (parts[0] || ''));
+
+    var state = { id: id, ciphertext: null, plaintext: null };
 
     $('paste-id').textContent = id || '?';
     var pasteHref = window.location.origin + '/' + id;
     $('full-url').value = pasteHref;
     $('raw-link').href = pasteHref;
 
-    fetch('/' + id)
-      .then(function (r) {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.text();
-      })
-      .then(function (text) { render(text, id); })
-      .catch(function (err) {
-        codeblock.textContent = 'failed to load paste: ' + err.message;
+    function showLoadError(message) {
+      codeblock.textContent = message;
+      drawGutter(1);
+      $('lang').textContent = '—';
+      alertMsg(message, 'error');
+    }
+
+    function renderDecrypted(bytes) {
+      render(new TextDecoder('utf-8', { fatal: false }).decode(bytes), id);
+      $('unlock').hidden = true;
+      $('viewer').style.display = '';
+    }
+
+    function tryDecryptWithKey(key) {
+      if (!window.PasteCrypt) { showLoadError('crypto library failed to load — reload the page'); return false; }
+      if (!state.ciphertext) return false;
+      try {
+        state.plaintext = window.PasteCrypt.decrypt(state.ciphertext, key);
+        renderDecrypted(state.plaintext);
+        $('head-meta').textContent = 'decrypted';
+        alertMsg('decrypted locally in your browser', 'success');
+        return true;
+      } catch (e) {
+        state.plaintext = null;
+        codeblock.textContent = '🔒 could not decrypt — wrong key or corrupted paste';
         drawGutter(1);
         $('lang').textContent = '—';
-        alertMsg('failed to load paste', 'error');
-      });
+        alertMsg('could not decrypt — wrong key or corrupted paste', 'error');
+        return false;
+      }
+    }
 
-    // Metadata comes from the worker; a bare id has no extension so strip one
-    // if the URL carried it.
-    fetch('/info/' + id.split('.')[0])
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (info) {
-        if (!info) { $('size').textContent = '—'; $('uploaded').textContent = '—'; return; }
-        $('size').textContent = formatBytes(info.size);
-        $('uploaded').textContent = info.uploaded
-          ? new Date(info.uploaded).toLocaleString()
-          : '—';
-      })
-      .catch(function () {
+    function askForKey() {
+      $('unlock').hidden = false;
+      $('viewer').style.display = 'none';
+      codeblock.textContent = '🔒 encrypted — paste the key to read this paste';
+      drawGutter(1);
+      $('lang').textContent = 'encrypted';
+      alertMsg('this paste is encrypted — paste the key from after the # in the link', 'warning');
+      $('key-input').focus();
+    }
+
+    function updateInfo(info) {
+      if (!info) {
         $('size').textContent = '—';
         $('uploaded').textContent = '—';
-      });
+        return;
+      }
+      $('size').textContent = formatBytes(info.size);
+      $('uploaded').textContent = info.uploaded ? new Date(info.uploaded).toLocaleString() : '—';
+    }
+
+    Promise.all([
+      fetch('/' + id).then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.arrayBuffer();
+      }),
+      // Metadata comes from the worker; a bare id has no extension so strip one
+      // if the URL carried it.
+      fetch('/info/' + id.split('.')[0]).then(function (r) { return r.ok ? r.json() : null; })
+    ]).then(function (results) {
+      state.ciphertext = new Uint8Array(results[0]);
+      var info = results[1];
+      updateInfo(info);
+      if (info && info.encrypted) {
+        $('head-meta').textContent = 'encrypted';
+        $('raw-link').textContent = 'ciphertext';
+        // Keep the fragment/key in the copyable link.
+        $('full-url').value = window.location.href;
+        var key = null;
+        try {
+          key = window.PasteCrypt.keyFromHash(window.location.hash);
+        } catch (e) {
+          key = null;
+        }
+        if (key) {
+          tryDecryptWithKey(key);
+        } else {
+          askForKey();
+        }
+      } else {
+        state.plaintext = state.ciphertext;
+        renderDecrypted(state.ciphertext);
+      }
+    }).catch(function (err) {
+      showLoadError('failed to load paste: ' + err.message);
+    });
+
+    $('unlock-btn').addEventListener('click', function () {
+      var raw = $('key-input').value.trim();
+      if (!raw) return;
+      var key = null;
+      try {
+        if (raw.indexOf('http') === 0) {
+          key = window.PasteCrypt.keyFromHash(new URL(raw).hash);
+        } else {
+          key = window.PasteCrypt.b64urlToKey(raw.replace(/^#/, '').replace(/^k=/, ''));
+        }
+      } catch (e) {
+        key = null;
+      }
+      if (!key) {
+        alertMsg('that does not look like a valid 32-byte key', 'error');
+        return;
+      }
+      tryDecryptWithKey(key);
+    });
+    $('key-input').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        $('unlock-btn').click();
+      }
+    });
 
     $('wrap-btn').addEventListener('click', function () {
       wrapped = !wrapped;
@@ -286,7 +388,8 @@ footer a{color:var(--muted)}
     });
 
     $('download-btn').addEventListener('click', function () {
-      var blob = new Blob([codeblock.textContent], { type: 'text/plain' });
+      var data = state.plaintext || new TextEncoder().encode(codeblock.textContent);
+      var blob = new Blob([data], { type: 'application/octet-stream' });
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
       a.href = url;

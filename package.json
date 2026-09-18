@@ -4,10 +4,11 @@
   "description": "A simple pastebin service using Cloudflare Workers and R2 storage",
   "main": "dist/index.mjs",
   "scripts": {
-    "build": "mkdir -p dist && cp src/index.html src/highlight.html dist/ && tsc --project tsconfig.json; node esbuild.mjs",
+    "build": "mkdir -p dist && cp src/index.html src/highlight.html dist/ && tsc --project tsconfig.json && node esbuild.mjs",
     "deploy": "npm run build && wrangler deploy",
     "dev": "wrangler dev",
-    "start": "wrangler dev"
+    "start": "wrangler dev",
+    "test": "node --test"
   },
   "keywords": [
     "pastebin",
@@ -19,6 +20,7 @@
   "author": "Sean Beahan",
   "license": "MIT",
   "dependencies": {
+    "@noble/ciphers": "^2.4.0",
     "hono": "^4.13.5"
   },
   "devDependencies": {
