@@ -88,16 +88,31 @@ server. Tick `encrypt: on` in the web UI (or add `?enc=1` to a `POST /`) and
 the browser encrypts the paste before upload. The worker only stores the
 ciphertext plus an `enc` marker in R2 custom metadata.
 
-The 32-byte key travels in the URL **fragment**:
+The key travels in the URL **fragment**:
 
 ```
 https://example.com/view/Ab3xZ#k=<base64url-key>
 ```
 
+For an attached file, the original filename is preserved client-side in the
+same fragment (`&n=<url-encoded-name>`), so the viewer can download the
+decrypted bytes under their original name:
+
+```
+https://example.com/view/Ab3xZ#k=<base64url-key>&n=report.pdf
+```
+
 Fragments are never sent in HTTP requests, so the server, Cloudflare logs, and
-R2 never see the key or the plaintext. Opening that link runs the viewer, which
-fetches `/info/:id` and `/Ab3xZ`, reads the key from `location.hash`, and
-decrypts locally. Without the key the viewer shows an unlock field instead.
+R2 never see the key, filename, or plaintext.
+
+Opening that link runs the viewer, which fetches `/info/:id` and `/Ab3xZ`,
+reads the fragment locally, and decrypts before rendering or downloading.
+Binary files show a "use download" notice instead of being forced through a
+text decoder. Without the key the viewer shows an unlock field instead.
+
+The web UI encrypts attached files as raw bytes when `encrypt: on`; the textarea
+and any client that POSTs bytes directly work the same way. With encryption off
+the attach button keeps its original behavior (load file text into the editor).
 
 **Keep the full URL.** If the part after `#` is lost the paste cannot be
 recovered. Anyone who has the link can read it.
@@ -110,6 +125,9 @@ Format v1 (stored in R2 verbatim):
 | 4 | 1 | format version `0x01` |
 | 5 | 12 | random nonce |
 | 17 | N | ChaCha20-Poly1305 ciphertext followed by the 16-byte tag |
+
+The optional original filename is not part of the container; it stays in the
+URL fragment and is never uploaded.
 
 The AAD is the 5-byte header (magic + version). The nonce is read from the
 container and is cryptographically bound because the Poly1305 tag is computed

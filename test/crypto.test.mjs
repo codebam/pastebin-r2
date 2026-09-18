@@ -1,6 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MIN_CONTAINER_LENGTH, decrypt, encrypt, generateKey, keyFromHash, keyToB64url, b64urlToKey } from '../src/crypto.client.mjs';
+import {
+	MIN_CONTAINER_LENGTH,
+	decrypt,
+	encrypt,
+	generateKey,
+	keyFromHash,
+	keyToB64url,
+	nameFromHash,
+	b64urlToKey,
+} from '../src/crypto.client.mjs';
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
@@ -63,4 +72,11 @@ test('keyFromHash reads fragment and rejects missing/invalid keys', () => {
 	assert.equal(keyFromHash(''), null);
 	assert.equal(keyFromHash('#other=1'), null);
 	assert.throws(() => keyFromHash('#k=not-a-valid-key'), /key/i);
+});
+
+test('nameFromHash reads an optional fragment filename', () => {
+	const key = keyToB64url(generateKey());
+	assert.equal(nameFromHash(''), '');
+	assert.equal(nameFromHash(`#k=${key}`), '');
+	assert.equal(nameFromHash(`#k=${key}&n=${encodeURIComponent('résumé final.pdf')}`), 'résumé final.pdf');
 });

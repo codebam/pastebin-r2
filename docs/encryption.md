@@ -10,6 +10,10 @@ bytes and a marker in R2 custom metadata; it has no key and cannot decrypt.
 - Cipher: ChaCha20-Poly1305 RFC 8439 (IETF 12-byte nonce, 16-byte tag).
 - Key: fresh 32 random bytes per paste, shared as unpadded base64url in the
   URL fragment (`#k=...`). The fragment is never sent in HTTP requests.
+- Files: a browser attachment is encrypted as its raw `ArrayBuffer`; the
+  original filename is carried separately as `&n=<url-encoded>` in the same
+  fragment so the viewer can download under the original name. Filename bytes
+  are not stored server-side.
 - Container: `PBR2` (4) || version `0x01` (1) || nonce (12) ||
   ciphertext || tag (16).
 - AAD: the 5-byte header (magic + version). The nonce is read from the
@@ -26,7 +30,7 @@ browser  -> random key + nonce, container = Encrypt(plaintext)
 browser  -> POST /?enc=1 (body = container)
 worker   -> R2.put(id, container, { expires, enc, encv })
 worker   -> 200 https://host/view/<id>
-browser  -> final URL = https://host/view/<id>#k=<base64url(key)>
+browser  -> final URL = https://host/view/<id>#k=<base64url(key)>[&n=<filename>]
 ```
 
 The viewer flow:
@@ -68,12 +72,16 @@ Does not protect:
 - A compromised/changed Worker deployment could serve viewer code that
   exfiltrates keys. The served JS is the trust anchor.
 - Metadata: ciphertext size, upload time, expiry, and existence are visible.
+  Filenames in the fragment are visible to anyone holding the link, but not to
+  the server or its logs.
 - Key loss: there is no recovery or password mode. No padding, so length is
   approximately revealed.
 
 ## CLI and testing
 
-`scripts/paste-crypt.mjs` wraps the same container format:
+Binary files work through the UI attach button (encryption on) and through any
+API client that sends raw bytes. `scripts/paste-crypt.mjs` wraps the same
+container format for files:
 
 ```bash
 KEY=$(node scripts/paste-crypt.mjs keygen)
@@ -93,5 +101,7 @@ Checks used while building this:
   container; move preserves the marker; update preserves it; `/crypto.js` is
   served same-origin.
 - jsdom load of the built HTML: create-page encryption produces the correct
-  `#k=` URL and decryptable container; viewer auto-decrypts; missing key shows
-  the unlock form; wrong key displays an error without leaking plaintext.
+  `#k=` URL and decryptable container; attached binary files round-trip through
+  the exact raw bytes and get an `&n=...` fragment name; viewer auto-decrypts
+  text, shows binary files with a download name, displays the unlock form when
+  the key is missing, and errors without leaking plaintext on a wrong key.

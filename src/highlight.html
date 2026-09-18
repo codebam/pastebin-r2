@@ -247,6 +247,7 @@ footer a{color:var(--muted)}
     var id = parts[0] === 'view' ? (parts[1] || '') : (parts.length >= 2 ? parts[parts.length - 2] : (parts[0] || ''));
 
     var state = { id: id, ciphertext: null, plaintext: null };
+    var encryptedName = '';
 
     $('paste-id').textContent = id || '?';
     var pasteHref = window.location.origin + '/' + id;
@@ -261,7 +262,20 @@ footer a{color:var(--muted)}
     }
 
     function renderDecrypted(bytes) {
-      render(new TextDecoder('utf-8', { fatal: false }).decode(bytes), id);
+      state.plaintext = bytes;
+      var text = null;
+      try {
+        text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+      } catch (e) {
+        text = null;
+      }
+      if (text === null) {
+        codeblock.textContent = '🔒 decrypted binary file — ' + formatBytes(bytes.length) + '\nuse download to save it.';
+        drawGutter(2);
+        $('lang').textContent = 'binary';
+      } else {
+        render(text, encryptedName || id);
+      }
       $('unlock').hidden = true;
       $('viewer').style.display = '';
     }
@@ -322,6 +336,11 @@ footer a{color:var(--muted)}
         $('raw-link').textContent = 'ciphertext';
         // Keep the fragment/key in the copyable link.
         $('full-url').value = window.location.href;
+        try {
+          encryptedName = window.PasteCrypt.nameFromHash(window.location.hash);
+        } catch (e) {
+          encryptedName = '';
+        }
         var key = null;
         try {
           key = window.PasteCrypt.keyFromHash(window.location.hash);
@@ -393,7 +412,7 @@ footer a{color:var(--muted)}
       var url = URL.createObjectURL(blob);
       var a = document.createElement('a');
       a.href = url;
-      a.download = id.indexOf('.') > -1 ? id : id + '.txt';
+      a.download = encryptedName || (id.indexOf('.') > -1 ? id : id + '.txt');
       document.body.appendChild(a);
       a.click();
       setTimeout(function () {

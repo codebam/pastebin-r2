@@ -111,3 +111,11 @@ export function keyFromHash(hash) {
 	if (!value) return null;
 	return b64urlToKey(value);
 }
+
+// Optional original filename, carried in the fragment as "#k=...&n=<encoded>".
+// It never reaches the server and is only used to name the decrypted download.
+export function nameFromHash(hash) {
+	if (!hash) return '';
+	const params = new URLSearchParams(hash.replace(/^#/, ''));
+	return params.get('n') || '';
+}

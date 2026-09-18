@@ -60,6 +60,8 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--mono);font-
 .btn.go{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);font-weight:600}
 .btn.go:hover{color:var(--accent)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
+#file-chip{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#file-chip[hidden]{display:none}
 select.btn{appearance:none;padding-right:22px;background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50%),linear-gradient(135deg,var(--dim) 50%,transparent 50%);background-position:calc(100% - 13px) 12px,calc(100% - 8px) 12px;background-size:5px 5px;background-repeat:no-repeat}
 .sp{flex:1}
 .hint{color:var(--dim);font-size:12px}
@@ -124,6 +126,7 @@ footer a{color:var(--muted)}
       <input type="file" id="file-upload" hidden>
       <button class="btn" id="file-btn">attach</button>
       <button class="btn" id="clip-btn">from clipboard</button>
+      <button class="btn" id="file-chip" hidden title="remove attached file"></button>
       <span class="sp"></span>
       <label class="hint" for="ttl-select">expires</label>
       <select class="btn" id="ttl-select">
@@ -173,8 +176,10 @@ footer a{color:var(--muted)}
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
-  var pasteText, gutter, counter, result, pasteUrl, submitBtn, dropZone, toast, fileUpload, encryptSelect;
+  var pasteText, gutter, counter, result, pasteUrl, submitBtn, dropZone, toast, fileUpload, encryptSelect, fileChip;
   var toastTimer;
+  var attachedFile = null;
+  var settingFileText = false;
 
   function showToast(msg) {
     toast.textContent = msg;
@@ -237,14 +242,49 @@ footer a{color:var(--muted)}
     counter.textContent = bytes.toLocaleString() + ' B · ' + lines + (lines === 1 ? ' line' : ' lines');
   }
 
-  function onInput() { syncGutter(); updateCounter(); }
+  function formatBytes(n) {
+    if (n < 1024) return n + ' B';
+    if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+    return (n / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  function updateFileChip() {
+    if (!fileChip) return;
+    if (!attachedFile) {
+      fileChip.hidden = true;
+      fileChip.textContent = '';
+      return;
+    }
+    fileChip.hidden = false;
+    fileChip.textContent = '📎 ' + attachedFile.name + ' (' + formatBytes(attachedFile.size) + ') ×';
+    fileChip.title = encryptSelect && encryptSelect.value === 'on'
+      ? 'raw file bytes will be encrypted; click to remove'
+      : 'click to remove';
+  }
+
+  function clearAttachedFile() {
+    attachedFile = null;
+    updateFileChip();
+  }
+
+  function onInput() {
+    // Typing in the editor means the user wants the text, not the attached file.
+    if (!settingFileText && attachedFile && document.activeElement === pasteText) clearAttachedFile();
+    syncGutter();
+    updateCounter();
+  }
 
   function readFile(file) {
     var reader = new FileReader();
     reader.onload = function (e) {
+      settingFileText = true;
       pasteText.value = e.target.result;
+      attachedFile = file;
+      updateFileChip();
       onInput();
-      alertMsg('loaded ' + file.name, 'success');
+      settingFileText = false;
+      var mode = encryptSelect && encryptSelect.value === 'on' ? ' — raw file will be encrypted' : '';
+      alertMsg('loaded ' + file.name + mode, 'success');
     };
     reader.onerror = function () { alertMsg('could not read ' + file.name, 'error'); };
     reader.readAsText(file);
@@ -254,7 +294,10 @@ footer a{color:var(--muted)}
     options = options || {};
     var serverUrl = String(url).trim();
     var viewUrl = serverUrl;
-    if (options.encrypted && options.key) viewUrl += '#k=' + options.key;
+    if (options.encrypted && options.key) {
+      viewUrl += '#k=' + options.key;
+      if (options.name) viewUrl += '&n=' + encodeURIComponent(options.name);
+    }
     var rawUrl = serverUrl;
     // Encrypted creates return the /view/<id> URL; the raw bytes live at /<id>.
     if (options.encrypted) {
@@ -277,7 +320,8 @@ footer a{color:var(--muted)}
   }
 
   async function submit() {
-    if (!pasteText.value.trim()) {
+    var encrypt = encryptSelect.value === 'on';
+    if (!(attachedFile && encrypt) && !pasteText.value.trim()) {
       alertMsg('nothing to paste yet', 'warning');
       pasteText.focus();
       return;
@@ -288,20 +332,27 @@ footer a{color:var(--muted)}
       // Same-origin, so the worker echoes back a URL on whatever host the
       // user is actually visiting.
       var ttl = $('ttl-select').value;
-      var encrypt = encryptSelect.value === 'on';
       var query = '/?ttl=' + encodeURIComponent(ttl);
       var body = pasteText.value;
       var keyB64 = null;
+      var fileName = null;
       if (encrypt) {
         if (!window.PasteCrypt) throw new Error('crypto library failed to load — reload the page');
-        var sealed = window.PasteCrypt.encrypt(new TextEncoder().encode(pasteText.value));
+        var plaintext;
+        if (attachedFile) {
+          fileName = attachedFile.name;
+          plaintext = new Uint8Array(await attachedFile.arrayBuffer());
+        } else {
+          plaintext = new TextEncoder().encode(pasteText.value);
+        }
+        var sealed = window.PasteCrypt.encrypt(plaintext);
         body = sealed.container;
         keyB64 = window.PasteCrypt.keyToB64url(sealed.key);
         query += '&enc=1';
       }
       var response = await fetch(query, { method: 'POST', body: body });
       if (response.ok) {
-        showResult(await response.text(), { encrypted: encrypt, key: keyB64 });
+        showResult(await response.text(), { encrypted: encrypt, key: keyB64, name: fileName });
       } else {
         alertMsg('failed: HTTP ' + response.status, 'error');
       }
@@ -324,6 +375,7 @@ footer a{color:var(--muted)}
     toast = $('toast');
     fileUpload = $('file-upload');
     encryptSelect = $('encrypt-select');
+    fileChip = $('file-chip');
 
     Array.prototype.forEach.call(document.querySelectorAll('.host'), function (el) {
       el.textContent = window.location.origin;
@@ -337,6 +389,11 @@ footer a{color:var(--muted)}
     fileUpload.addEventListener('change', function () {
       if (this.files && this.files[0]) readFile(this.files[0]);
     });
+    fileChip.addEventListener('click', function () {
+      clearAttachedFile();
+      alertMsg('file removed', 'success');
+    });
+    encryptSelect.addEventListener('change', updateFileChip);
 
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(function (ev) {
       dropZone.addEventListener(ev, function (e) { e.preventDefault(); e.stopPropagation(); });
@@ -359,6 +416,7 @@ footer a{color:var(--muted)}
 
     $('clear-btn').addEventListener('click', function () {
       pasteText.value = '';
+      clearAttachedFile();
       onInput();
       result.hidden = true;
       pasteText.focus();
