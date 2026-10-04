@@ -9,7 +9,7 @@ It supports storing text content in R2 bucket storage with API endpoints for cre
 
 ## Features
 
-- Upload paste snippets (text files)
+- Upload pasted text, or attach/drop files (bytes stored as-is; optional client-side encryption)
 - Retrieve paste by ID
 - View paste with syntax highlighting
 - Delete paste functionality

@@ -40,7 +40,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--mono);font-
 .bar .tag{color:var(--accent)}
 .bar .right{margin-left:auto;color:var(--dim)}
 
-.editor{display:flex;position:relative}
+.editor{display:flex;position:relative;max-height:min(70vh,720px);overflow:hidden}
 .gutter{flex:0 0 auto;padding:12px 10px;text-align:right;color:var(--dim);font-size:13px;line-height:1.6;
   user-select:none;border-right:1px solid var(--line);background:var(--panel-2);overflow:hidden;white-space:pre}
 #paste-text{
@@ -119,8 +119,8 @@ footer a{color:var(--muted)}
     <div class="editor" id="drop-zone">
       <div class="gutter" id="gutter" aria-hidden="true">1</div>
       <textarea id="paste-text" spellcheck="false" wrap="off"
-        placeholder="type here, or drop a file on this box…"></textarea>
-      <div class="drop">drop file to load</div>
+        placeholder="type here, or drop a file to attach…"></textarea>
+      <div class="drop">drop file to attach</div>
     </div>
     <div class="foot">
       <input type="file" id="file-upload" hidden>
@@ -179,7 +179,6 @@ footer a{color:var(--muted)}
   var pasteText, gutter, counter, result, pasteUrl, submitBtn, dropZone, toast, fileUpload, encryptSelect, fileChip;
   var toastTimer;
   var attachedFile = null;
-  var settingFileText = false;
 
   function showToast(msg) {
     toast.textContent = msg;
@@ -269,25 +268,22 @@ footer a{color:var(--muted)}
 
   function onInput() {
     // Typing in the editor means the user wants the text, not the attached file.
-    if (!settingFileText && attachedFile && document.activeElement === pasteText) clearAttachedFile();
+    if (attachedFile && document.activeElement === pasteText) {
+      clearAttachedFile();
+      alertMsg('attachment removed — the paste will be the text', 'warning');
+    }
     syncGutter();
     updateCounter();
   }
 
-  function readFile(file) {
-    var reader = new FileReader();
-    reader.onload = function (e) {
-      settingFileText = true;
-      pasteText.value = e.target.result;
-      attachedFile = file;
-      updateFileChip();
-      onInput();
-      settingFileText = false;
-      var mode = encryptSelect && encryptSelect.value === 'on' ? ' — raw file will be encrypted' : '';
-      alertMsg('loaded ' + file.name + mode, 'success');
-    };
-    reader.onerror = function () { alertMsg('could not read ' + file.name, 'error'); };
-    reader.readAsText(file);
+  // Attach a file to upload as-is. The bytes go to the server untouched —
+  // the editor is left alone, so a large photo can never flood it with
+  // text (or drag the submit button down a 40k-line gutter).
+  function attachFile(file) {
+    attachedFile = file;
+    updateFileChip();
+    var mode = encryptSelect && encryptSelect.value === 'on' ? ' — raw file will be encrypted' : '';
+    alertMsg('attached ' + file.name + ' (' + formatBytes(file.size) + ')' + mode, 'success');
   }
 
   function showResult(url, options) {
@@ -313,7 +309,7 @@ footer a{color:var(--muted)}
     $('link-raw').textContent = options.encrypted ? 'raw ciphertext' : 'raw';
     $('link-highlight').href = options.encrypted ? viewUrl : viewUrl + '/highlight';
     $('link-highlight').textContent = options.encrypted ? 'open' : 'highlighted';
-    $('result-line').textContent = options.encrypted ? '✓ created — encrypted' : '✓ created';
+    $('result-line').textContent = '✓ created' + (options.encrypted ? ' — encrypted' : '') + (options.name ? ' — ' + options.name : '');
     $('encrypt-warning').hidden = !options.encrypted;
     result.hidden = false;
     result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -321,7 +317,7 @@ footer a{color:var(--muted)}
 
   async function submit() {
     var encrypt = encryptSelect.value === 'on';
-    if (!(attachedFile && encrypt) && !pasteText.value.trim()) {
+    if (!attachedFile && !pasteText.value.trim()) {
       alertMsg('nothing to paste yet', 'warning');
       pasteText.focus();
       return;
@@ -333,18 +329,20 @@ footer a{color:var(--muted)}
       // user is actually visiting.
       var ttl = $('ttl-select').value;
       var query = '/?ttl=' + encodeURIComponent(ttl);
-      var body = pasteText.value;
+      // An attached file is the payload: its bytes go up untouched (the
+      // editor text only wins when no file is attached).
+      var body;
       var keyB64 = null;
       var fileName = null;
+      if (attachedFile) {
+        fileName = attachedFile.name;
+        body = await attachedFile.arrayBuffer();
+      } else {
+        body = pasteText.value;
+      }
       if (encrypt) {
         if (!window.PasteCrypt) throw new Error('crypto library failed to load — reload the page');
-        var plaintext;
-        if (attachedFile) {
-          fileName = attachedFile.name;
-          plaintext = new Uint8Array(await attachedFile.arrayBuffer());
-        } else {
-          plaintext = new TextEncoder().encode(pasteText.value);
-        }
+        var plaintext = typeof body === 'string' ? new TextEncoder().encode(body) : new Uint8Array(body);
         var sealed = window.PasteCrypt.encrypt(plaintext);
         body = sealed.container;
         keyB64 = window.PasteCrypt.keyToB64url(sealed.key);
@@ -387,7 +385,7 @@ footer a{color:var(--muted)}
 
     $('file-btn').addEventListener('click', function () { fileUpload.click(); });
     fileUpload.addEventListener('change', function () {
-      if (this.files && this.files[0]) readFile(this.files[0]);
+      if (this.files && this.files[0]) attachFile(this.files[0]);
     });
     fileChip.addEventListener('click', function () {
       clearAttachedFile();
@@ -406,7 +404,7 @@ footer a{color:var(--muted)}
     });
     dropZone.addEventListener('drop', function (e) {
       var files = e.dataTransfer && e.dataTransfer.files;
-      if (files && files.length) readFile(files[0]);
+      if (files && files.length) attachFile(files[0]);
     });
 
     submitBtn.addEventListener('click', submit);
@@ -422,19 +420,46 @@ footer a{color:var(--muted)}
       pasteText.focus();
     });
 
-    $('clip-btn').addEventListener('click', function () {
+    function clipboardText() {
       if (!navigator.clipboard || !navigator.clipboard.readText) {
         alertMsg('clipboard read unavailable in this browser', 'warning');
         return;
       }
       navigator.clipboard.readText().then(function (text) {
         if (!text) { alertMsg('clipboard is empty', 'warning'); return; }
+        clearAttachedFile();
         pasteText.value = text;
         onInput();
       }, function () {
         alertMsg('clipboard permission denied', 'warning');
       });
-    });
+    }
+
+    // Prefer an image when the clipboard holds one (a copied photo or
+    // screenshot): attach it as a file instead of letting its bytes enter
+    // the editor as text. Anything carrying text goes down the text path.
+    function clipboardImageOrText() {
+      if (!navigator.clipboard || !navigator.clipboard.read) { clipboardText(); return; }
+      navigator.clipboard.read().then(function (items) {
+        var imageItem = null, imageType = null, hasText = false;
+        for (var i = 0; i < items.length; i++) {
+          var types = items[i].types || [];
+          for (var j = 0; j < types.length; j++) {
+            if (types[j] === 'text/plain') hasText = true;
+            if (!imageItem && types[j].indexOf('image/') === 0) { imageItem = items[i]; imageType = types[j]; }
+          }
+        }
+        if (hasText || !imageItem) { clipboardText(); return; }
+        imageItem.getType(imageType).then(function (blob) {
+          var ext = imageType === 'image/jpeg' ? 'jpg' : (imageType.split('/')[1] || 'png');
+          attachFile(new File([blob], 'pasted-image.' + ext, { type: imageType }));
+        }, function () { alertMsg('could not read the clipboard image', 'warning'); });
+      }, function () {
+        clipboardText();
+      });
+    }
+
+    $('clip-btn').addEventListener('click', clipboardImageOrText);
 
     $('copy-url-btn').addEventListener('click', function () {
       if (!pasteUrl.value) return;
